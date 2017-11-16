@@ -1,11 +1,22 @@
+#Usuwanie poprzedniej wersji danych
+drop trigger if exists frisbee.po_meczu;
+drop trigger if exists druz_plus;
+drop view if exists punktacja;
+drop table if exists frisbee.zawodnicy;
+drop table if exists frisbee.druzyny;
+drop table if exists frisbee.mecze;
+drop table if exists frisbee.parametry;
+drop database if exists frisbee;
+
 #Tworzenie bazy danych
 create database frisbee;
 use frisbee;
 
 #Tworzenie tabeli parametrów (niektóre parametry będą wtórnie uzupełniane, ale są potrzebne, żeby się do nich odnosić jako zmienne)
-create table parametry(parametr varchar(20), wartosc smallint);
-insert into parametry values ('ile_druzyn', 0);
-insert into parametry values ('ile_grup', 2);
+create table parametry(parametr varchar(20) unique, wartosc smallint);
+insert into parametry values ('ile_druzyn', 0); #ta wartość modyfikowana jest przez trigger
+insert into parametry values ('ile_grup', 2); #tę wartość na razie trzeba wprowadzić ręcznie
+insert into parametry values ('rewanze', 1);#0 - bez rewanżów, 1 - z rewanżami
 
 #Tworzenie tabeli z drużynami
 create table druzyny(id tinyint primary key auto_increment, nazwa tinytext, kolor varchar(20), grupa tinyint, mecze tinyint default 0, zwyc tinyint default 0, remis tinyint default 0, porazka tinyint default 0, punkty tinyint default 0, male_pkt_plus smallint default 0, male_pkt_minus smallint default 0, roznica_pkt smallint default 0, miejsce tinyint);
@@ -176,31 +187,7 @@ select kolor, rozmiar, count(*) As ile from druzyny join zawodnicy on druzyny.id
 update druzyny set grupa = ceil((id/(select wartosc from parametry where parametr='ile_druzyn'))*(select wartosc from parametry where parametr='ile_grup'));
 
 #Utworzenie tabeli meczów
-create table mecze(id tinyint primary key auto_increment, kto_id tinyint, z_kim_id tinyint, kto_pkt tinyint, z_kim_pkt tinyint);
-
-#Wypełnienie tabeli meczów o mecze grupowe
-insert into mecze(kto_id, z_kim_id) select a.id, b.id from druzyny as a join druzyny as b where a.id>b.id and a.grupa=b.grupa;
-
-#Prezentacja meczów
-select d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, concat(kto_pkt,':',z_kim_pkt) as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id;
-
-#Wprowadzenie kilku wyników meczów:
-update mecze set kto_pkt = 15 , z_kim_pkt = 7 where id = 1;
-update mecze set kto_pkt = 13 , z_kim_pkt = 15 where id = 2;
-update mecze set kto_pkt = 15 , z_kim_pkt = 9 where id = 3;
-update mecze set kto_pkt = 15 , z_kim_pkt = 13 where id = 4;
-update mecze set kto_pkt = 6 , z_kim_pkt = 15 where id = 5;
-update mecze set kto_pkt = 15 , z_kim_pkt = 10 where id = 6;
-
-#TUTAJ! POniżej jest tabela robocza, teraz trzeba to połączyć z punktacją w tabeli "drużyny"
-#Tabela zbiorcza ze zwycięstwami i małymi punktami
-select kto_id as Drużyna, 1 as Zwycięstwa, kto_pkt As Punkty from mecze where kto_pkt>z_kim_pkt
-union all
-select z_kim_id as Drużyna, 1 as Zwycięstwa, z_kim_pkt As Punkty from mecze where kto_pkt<z_kim_pkt
-union all
-select kto_id as Drużyna, 0 as Zwycięstwa, kto_pkt As Punkty from mecze where kto_pkt<z_kim_pkt
-union all
-select z_kim_id as Drużyna, 0 as Zwycięstwa, z_kim_pkt As Punkty from mecze where kto_pkt>z_kim_pkt;
+create table mecze(id tinyint primary key auto_increment, faza varchar(12), kto_id tinyint, z_kim_id tinyint, kto_pkt tinyint, z_kim_pkt tinyint);
 
 #Generator zestawu Mecz + rewanż
 #select a.nazwa As Druzyna1, b.nazwa As Druzyna2 from druzyny as a join druzyny as b where a.id!=b.id and a.grupa=b.grupa;
@@ -208,16 +195,59 @@ select z_kim_id as Drużyna, 0 as Zwycięstwa, z_kim_pkt As Punkty from mecze wh
 #Generator zestawu Mecz bez rewanżu
 #select a.nazwa As Druzyna1, b.nazwa As Druzyna2 from druzyny as a join druzyny as b where a.id>b.id and a.grupa=b.grupa;
 
+#Wypełnienie tabeli meczów o mecze grupowe (generuje rewanże w zależności od wartości parametru rewanże
+insert into mecze(faza, kto_id, z_kim_id) select 'Faza grupowa', a.id, b.id from druzyny as a join druzyny as b where case when (select wartosc from parametry where parametr='rewanze') then a.id!=b.id else a.id>b.id end and a.grupa=b.grupa;
+
+#Prezentacja meczów
+select faza, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id;
+
+#Utworzenie widoku "punktacja" w którym zbierana jest liczba zwycięstw i małe punkty TYLKO Z FAZY GRUPOWEJ
+create view punktacja as
+select kto_id as Drużyna, 1 as Zwycięstwa, kto_pkt As Punkty_plus, z_kim_pkt As Punkty_minus from mecze where kto_pkt>z_kim_pkt and faza='Faza grupowa'
+union all
+select z_kim_id as Drużyna, 1 as Zwycięstwa, z_kim_pkt As Punkty_plus, kto_pkt As Punkty_minus from mecze where kto_pkt<z_kim_pkt and faza='Faza grupowa'
+union all
+select kto_id as Drużyna, 0 as Zwycięstwa, kto_pkt As Punkty_plus, z_kim_pkt As Punkty_minus from mecze where kto_pkt<z_kim_pkt and faza='Faza grupowa'
+union all
+select z_kim_id as Drużyna, 0 as Zwycięstwa, z_kim_pkt As Punkty_plus, kto_pkt As Punkty_minus from mecze where kto_pkt>z_kim_pkt and faza='Faza grupowa';
+
+#Stworzenie triggerów do aktualizacji liczby rozegranych meczów, zdobyczy punktowych itp.
+create trigger po_meczu after update on mecze for each row update druzyny set mecze = (select count(*) from punktacja where Drużyna = id), zwyc = coalesce((select sum(Zwycięstwa) from punktacja where Drużyna = id),0), porazka = (select count(*) from punktacja where Zwycięstwa=0 and Drużyna = id), punkty = zwyc, male_pkt_plus = coalesce((select sum(Punkty_plus) from punktacja where Drużyna = id),0), male_pkt_minus = coalesce((select sum(Punkty_minus) from punktacja where Drużyna = id),0), roznica_pkt = male_pkt_plus - male_pkt_minus;
+
+#Wprowadzenie kilku wyników meczów:
+update mecze set kto_pkt = 14, z_kim_pkt = 15 where id = 1;
+update mecze set kto_pkt = 15, z_kim_pkt = 13 where id = 2;
+update mecze set kto_pkt = 15, z_kim_pkt = 4 where id = 3;
+update mecze set kto_pkt = 11, z_kim_pkt = 15 where id = 4;
+update mecze set kto_pkt = 1, z_kim_pkt = 15 where id = 5;
+update mecze set kto_pkt = 7, z_kim_pkt = 15 where id = 6;
+update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 7;
+update mecze set kto_pkt = 15, z_kim_pkt = 5 where id = 8;
+update mecze set kto_pkt = 15, z_kim_pkt = 0 where id = 9;
+update mecze set kto_pkt = 2, z_kim_pkt = 15 where id = 10;
+update mecze set kto_pkt = 8, z_kim_pkt = 15 where id = 11;
+update mecze set kto_pkt = 11, z_kim_pkt = 15 where id = 12;
+update mecze set kto_pkt = 15, z_kim_pkt = 14 where id = 13;
+update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 14;
+update mecze set kto_pkt = 8, z_kim_pkt = 15 where id = 15;
+update mecze set kto_pkt = 15, z_kim_pkt = 14 where id = 16;
+update mecze set kto_pkt = 15, z_kim_pkt = 9 where id = 17;
+update mecze set kto_pkt = 15, z_kim_pkt = 13 where id = 18;
+update mecze set kto_pkt = 15, z_kim_pkt = 9 where id = 19;
+update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 20;
+update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 21;
+update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 22;
+update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 23;
+update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 24;
+
+#Prezentacja wyników w jednej grupie
+select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
+select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
+
 /*
 select * from zawodnicy;
 select * from druzyny;
 select * from mecze;
 select * from parametry;
-*/
-
-/*
-drop table zawodnicy;
-drop table druzyny;
-drop table parametry;
-drop database frisbee;
+select * from punktacja;
 */
