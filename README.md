@@ -13,7 +13,7 @@ Końcowa wersja programu powinna umożliwić rejestrację zawodników, wygenerow
 Obecna wersja zawiera:
 1. plik "generator_nazwisk.ods" (plik Open Office Calc) w którym wkleiłem imiona i nazwiska z generatora znalezionego w sieci i uzupełniłem o losowe wartości potrzebne w bazie danych.
 2. plik "skrypt_prototyp.sql", który:
-  a. tworzy nową bazę danych
+	a. tworzy nową bazę danych
   b. tworzy tabelę parametrów np. ile będzie drużyn, ile będzie grup
   c. tworzy tabelę drużyn i uzupełnia ją o przykładowe drużyny
   d. tworzy trigger, który automatycznie zwiększa parametr 'ilość drużyn' w tabeli parametrów, gdy dodawana jest drużyna.
@@ -34,4 +34,6 @@ Obecna wersja zawiera:
     - zmiana liczby drużyn automatycznie generuje inny system rozgrywek
     - możliwość wyboru czym kończy się mecz (obecnie przyjęto, że gra się do 15 pkt) i możliwość remisu
     - różne opcje boiskowe albo noclegowe
+	e. dodać tabelę login/pass
+	f. dodać tabelę uprawnień
   
