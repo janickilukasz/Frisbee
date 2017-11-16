@@ -240,14 +240,20 @@ update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 22;
 update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 23;
 update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 24;
 
+#TUTAJ
+#próbne wstawienie meczu spoza fazy grupowej CZEMU ID MA NUMER 32 ?!?!?!?!
+insert into mecze(faza, kto_id, z_kim_id) values ('Final', 5, 7);
+#insert into mecze(faza, kto_id, z_kim_id) values ('Ćwierćfinał', 1, 2);
+#update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 25;
+
 #Prezentacja wyników w jednej grupie
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
 
-/*
+
 select * from zawodnicy;
 select * from druzyny;
 select * from mecze;
 select * from parametry;
 select * from punktacja;
-*/
+
