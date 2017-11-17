@@ -197,7 +197,7 @@ create table mecze(id tinyint primary key auto_increment, faza varchar(12), kto_
 
 #Wypełnienie tabeli meczów o mecze grupowe (generuje rewanże w zależności od wartości parametru rewanże
 insert into mecze(faza, kto_id, z_kim_id) select 'Faza grupowa', a.id, b.id from druzyny as a join druzyny as b where case when (select wartosc from parametry where parametr='rewanze') then a.id!=b.id else a.id>b.id end and a.grupa=b.grupa;
-
+insert into mecze(kto_id, z_kim_id) values (4,5);
 #Prezentacja meczów
 select faza, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id;
 
@@ -242,14 +242,15 @@ update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 24;
 
 #TUTAJ
 #próbne wstawienie meczu spoza fazy grupowej CZEMU ID MA NUMER 32 ?!?!?!?!
-insert into mecze(faza, kto_id, z_kim_id) values ('Final', 5, 7);
+#insert into mecze(id, faza, kto_id, z_kim_id) values (25, 'Ćwierćfinał', 5, 7);
+#update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 25;
+#update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 32;
 #insert into mecze(faza, kto_id, z_kim_id) values ('Ćwierćfinał', 1, 2);
 #update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 25;
 
 #Prezentacja wyników w jednej grupie
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
-
 
 select * from zawodnicy;
 select * from druzyny;
