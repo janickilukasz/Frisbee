@@ -1,27 +1,78 @@
 #Usuwanie poprzedniej wersji danych
 drop trigger if exists frisbee.po_meczu;
-drop trigger if exists druz_plus;
-drop view if exists punktacja;
+drop trigger if exists frisbee.druz_plus;
+drop view if exists frisbee.punktacja;
 drop table if exists frisbee.zawodnicy;
 drop table if exists frisbee.druzyny;
 drop table if exists frisbee.mecze;
+#DO WYWALENIA:
 drop table if exists frisbee.parametry;
+drop table if exists frisbee.systemy;
 drop database if exists frisbee;
 
 #Tworzenie bazy danych
 create database frisbee;
 use frisbee;
 
+#Tworzenie tabeli z loginami i hasłami
+create table logpass(id smallint primary key auto_increment, login varchar(50), pass varchar(50), uprawnienia bit default 0);
+
+#Przykładowe wypełnienie tabeli logpass
+insert into logpass(login, pass, uprawnienia) values ('admin','123',1);
+insert into logpass(login, pass) values ('tomek','xyz');
+insert into logpass(login, pass) values ('mariola','kotek');
+insert into logpass(login, pass) values ('rysiek30','lubiechrupki');
+insert into logpass(login, pass) values ('bonzo','12345');
+insert into logpass(login, pass) values ('muniek_krakow','mariolka');
+
 #Tworzenie tabeli parametrów (niektóre parametry będą wtórnie uzupełniane, ale są potrzebne, żeby się do nich odnosić jako zmienne)
+#Właściwie to ten zestaw można zastąpić zmiennymi w kodzie!
+#DO WYWALENIA
 create table parametry(parametr varchar(20) unique, wartosc smallint);
 insert into parametry values ('ile_druzyn', 0); #ta wartość modyfikowana jest przez trigger
 insert into parametry values ('ile_grup', 2); #tę wartość na razie trzeba wprowadzić ręcznie
-insert into parametry values ('rewanze', 1);#0 - bez rewanżów, 1 - z rewanżami
+insert into parametry values ('rewanze', 0);#0 - bez rewanżów, 1 - z rewanżami
+
+#Kod do zmiany parametrów (po wyborze systemu rozgrywek to będzie wykonywane na podstawie wyboru):
+#DO WYWALENIA
+update parametry set wartosc = 1 where parametr='rewanze';
+
+#Tworzenie tabeli systemów (lista jest stała, można potem dodać jakieś możliwość modyfikacji)
+#kolumna rewanże = 1 - są rewanże, 0 - nie ma rewanżów
+create table systemy(id tinyint primary key auto_increment, ilosc_druz tinyint, ilosc_gr tinyint, ilosc_cwierc tinyint, ilosc_pol tinyint, ilosc_final tinyint, rewanze bit);
+
+#Uzupełnianie tabeli systemów
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (4,1,0,0,2,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (5,1,0,0,2,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (6,1,0,0,3,0);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (6,2,0,0,3,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (8,2,0,4,4,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (9,3,0,4,4,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (10,2,0,4,5,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (12,2,0,6,6,0);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (12,3,4,6,6,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (12,4,4,6,6,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (14,2,4,6,7,0);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (15,3,4,7,7,0);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (16,4,8,8,8,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (18,6,8,8,9,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (20,4,8,10,10,0);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (20,5,8,10,10,1);
+insert into systemy(ilosc_druz, ilosc_gr, ilosc_cwierc, ilosc_pol, ilosc_final, rewanze) values (21,7,8,10,10,1);
+
+#Jaka faza po fazie grupowej? (w zależności od wybranego systemu rozgrywek)
+select case when (select ilosc_cwierc from systemy where id=5)>0 then 'cwiercfinaly' when (select ilosc_pol from systemy where id=5)>0 then 'polfinaly' else 'finaly' end as Faza;
+
+#Ile meczów po fazie grupowej? (w zależności od wybranego systemu rozgrywek i fazy z poprzedniego zapytania)
+select ilosc_cwierc from systemy where id=5;
+select ilosc_pol from systemy where id=5;
+select ilosc_final from systemy where id=5;
 
 #Tworzenie tabeli z drużynami
 create table druzyny(id tinyint primary key auto_increment, nazwa tinytext, kolor varchar(20), grupa tinyint, mecze tinyint default 0, zwyc tinyint default 0, remis tinyint default 0, porazka tinyint default 0, punkty tinyint default 0, male_pkt_plus smallint default 0, male_pkt_minus smallint default 0, roznica_pkt smallint default 0, miejsce tinyint);
 
 #Tworzenie triggerów do obsługi tabeli parametrów na podstawie tabeli z drużynami
+#DO WYWALENIA
 create trigger druz_plus after insert on druzyny for each row update parametry set wartosc = wartosc + 1 where parametr='ile_druzyn';
 
 #Uzupełnienie tabeli drużyn
@@ -33,6 +84,9 @@ insert into druzyny(nazwa, kolor) values ('Hejnaliści','czarny');
 insert into druzyny(nazwa, kolor) values ('Królowie','różowy');
 insert into druzyny(nazwa, kolor) values ('Precle','fioletowy');
 insert into druzyny(nazwa, kolor) values ('Kosynierzy','szary');
+
+#Lista systemów rozgrywek dla wybranej ilości drużyn
+select * from systemy where ilosc_druz=(select count(*) from druzyny);
 
 #Tworzenie tabeli zawodników
 create table zawodnicy(id smallint primary key auto_increment, imie tinytext not null, nazwisko tinytext not null, plec char(1) not null, poziom tinyint unsigned, pozycja varchar(7), menu varchar(5), rozmiar varchar(2) not null, druzyna tinyint, foreign key(druzyna) references druzyny(id));
@@ -184,6 +238,7 @@ select menu, count(*) As ile from zawodnicy group by menu;
 select kolor, rozmiar, count(*) As ile from druzyny join zawodnicy on druzyny.id = zawodnicy.druzyna group by kolor, rozmiar order by kolor;
 
 #Przydzielenie drużyn do grup (działa dla dowolnej ilości grup na podstawie ilości grup w parametrach, przydziela drużyny po kolei bez losowania)
+#DO EDYCJI (bo docelowo nie będzie tabeli parametrów)
 update druzyny set grupa = ceil((id/(select wartosc from parametry where parametr='ile_druzyn'))*(select wartosc from parametry where parametr='ile_grup'));
 
 #Utworzenie tabeli meczów
@@ -196,8 +251,9 @@ create table mecze(id tinyint primary key auto_increment, faza varchar(12), kto_
 #select a.nazwa As Druzyna1, b.nazwa As Druzyna2 from druzyny as a join druzyny as b where a.id>b.id and a.grupa=b.grupa;
 
 #Wypełnienie tabeli meczów o mecze grupowe (generuje rewanże w zależności od wartości parametru rewanże
+#DO EDYCJI (docelowo nie będzie tabeli parametrów i to dlatego)
 insert into mecze(faza, kto_id, z_kim_id) select 'Faza grupowa', a.id, b.id from druzyny as a join druzyny as b where case when (select wartosc from parametry where parametr='rewanze') then a.id!=b.id else a.id>b.id end and a.grupa=b.grupa;
-insert into mecze(kto_id, z_kim_id) values (4,5);
+
 #Prezentacja meczów
 select faza, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id;
 
@@ -252,9 +308,13 @@ update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 24;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
 
+
+/*
+select * from logpass;
 select * from zawodnicy;
 select * from druzyny;
+select * from systemy;
 select * from mecze;
 select * from parametry;
 select * from punktacja;
-
+*/
