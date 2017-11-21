@@ -45,8 +45,8 @@ insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(20
 insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(20,5,1,1,1,1);
 insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(21,7,1,1,1,1);
 
-#Tworzenie tabeli z drużynami
-create table druzyny(id tinyint primary key auto_increment, nazwa tinytext, kolor varchar(20), grupa tinyint, mecze tinyint default 0, zwyc tinyint default 0, remis tinyint default 0, porazka tinyint default 0, punkty tinyint default 0, male_pkt_plus smallint default 0, male_pkt_minus smallint default 0, roznica_pkt smallint default 0, miejsce tinyint);
+#Tworzenie tabeli z drużynami (awans = 1 to awans do ćwierćfinały, awans = 2 do półfinały, awans = 3 do finału)
+create table druzyny(id tinyint primary key auto_increment, nazwa tinytext, kolor varchar(20), grupa tinyint, mecze tinyint default 0, zwyc tinyint default 0, porazka tinyint default 0, punkty tinyint default 0, male_pkt_plus smallint default 0, male_pkt_minus smallint default 0, roznica_pkt smallint default 0, awans tinyint default 0, miejsce tinyint);
 
 #Uzupełnienie tabeli drużyn
 insert into druzyny(nazwa, kolor) values ('Smoki','niebieski');
@@ -64,7 +64,7 @@ select * from systemy where ilosc_druz=(select count(*) from druzyny);
 #DO WYWALENIA:
 #Wybrany system(to będzie przechowywane w zmiennej):
 create table wybrany_system(id tinyint);
-insert into wybrany_system values (5);
+insert into wybrany_system values (9);
 
 #Tworzenie tabeli zawodników
 create table zawodnicy(id smallint primary key auto_increment, imie tinytext not null, nazwisko tinytext not null, plec char(1) not null, poziom tinyint unsigned, pozycja varchar(7), menu varchar(5), rozmiar varchar(2) not null, druzyna tinyint, foreign key(druzyna) references druzyny(id));
@@ -287,7 +287,28 @@ select case when (select cwierc from systemy where id=(select * from wybrany_sys
 #Ile drużyn awansuje bezpośrednio z grupy?
 select(floor((select case when (select cwierc from systemy where id=(select * from wybrany_system))=1 then 8 when (select pol from systemy where id=(select * from wybrany_system))=1 then 4 else 2 end as Faza)/(select ilosc_gr from systemy where id=(select * from wybrany_system)))) As 'Awans bezpośredni z grupy';
 
-#Kto awansował?
+#Kto awansował? (zrobione ze zmienną, bo LIMIT nie przyjmuje wyrażeń)
+set @ile_wychodzi = (select(floor((select case when (select cwierc from systemy where id=(select * from wybrany_system))=1 then 8 when (select pol from systemy where id=(select * from wybrany_system))=1 then 4 else 2 end as Faza)/(select ilosc_gr from systemy where id=(select * from wybrany_system)))) As 'Awans bezpośredni z grupy');
+prepare wychodzace from "
+(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc limit ?)
+union all
+(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc limit ?)
+union all
+(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=3 order by zwyc desc, roznica_pkt desc limit ?)
+union all
+(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=4 order by zwyc desc, roznica_pkt desc limit ?)
+union all
+(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=5 order by zwyc desc, roznica_pkt desc limit ?)
+union all
+(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=6 order by zwyc desc, roznica_pkt desc limit ?)
+union all
+(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=7 order by zwyc desc, roznica_pkt desc limit ?)";
+
+execute wychodzace using @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi;
+
+#TUTAJ!!!!!
+select id,nazwa,zwyc from druzyny order by zwyc limit 2;
+
 /*
 select * from logpass;
 select * from zawodnicy;
