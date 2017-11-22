@@ -56,6 +56,10 @@ insert into druzyny(nazwa, kolor) values ('Hejnaliści','czarny');
 insert into druzyny(nazwa, kolor) values ('Królowie','różowy');
 insert into druzyny(nazwa, kolor) values ('Precle','fioletowy');
 insert into druzyny(nazwa, kolor) values ('Kosynierzy','szary');
+insert into druzyny(nazwa, kolor) values ('Smogi','pomarańczowy');
+insert into druzyny(nazwa, kolor) values ('Kościuszki','srebrny');
+insert into druzyny(nazwa, kolor) values ('Papieże','złoty');
+insert into druzyny(nazwa, kolor) values ('Gołębie','seledynowy');
 
 #Lista systemów rozgrywek dla wybranej ilości drużyn
 select * from systemy where ilosc_druz=(select count(*) from druzyny);
@@ -63,7 +67,7 @@ select * from systemy where ilosc_druz=(select count(*) from druzyny);
 #DO WYWALENIA:
 #Wybrany system(to będzie przechowywane w zmiennej):
 create table wybrany_system(id tinyint);
-insert into wybrany_system values (5);
+insert into wybrany_system values (9);
 
 #Tworzenie tabeli zawodników
 create table zawodnicy(id smallint primary key auto_increment, imie tinytext not null, nazwisko tinytext not null, plec char(1) not null, poziom tinyint unsigned, pozycja varchar(7), menu varchar(5), rozmiar varchar(2) not null, druzyna tinyint, foreign key(druzyna) references druzyny(id));
@@ -236,8 +240,8 @@ select kto_id as Drużyna, 0 as Zwycięstwa, kto_pkt As Punkty_plus, z_kim_pkt A
 union all
 select z_kim_id as Drużyna, 0 as Zwycięstwa, z_kim_pkt As Punkty_plus, kto_pkt As Punkty_minus from mecze where kto_pkt>z_kim_pkt and faza='Faza grupowa';
 
-#Stworzenie triggerów do aktualizacji liczby rozegranych meczów, zdobyczy punktowych itp.
-create trigger po_meczu after update on mecze for each row update druzyny set mecze = (select count(*) from punktacja where Drużyna = id), zwyc = coalesce((select sum(Zwycięstwa) from punktacja where Drużyna = id),0), porazka = (select count(*) from punktacja where Zwycięstwa=0 and Drużyna = id), male_pkt_plus = coalesce((select sum(Punkty_plus) from punktacja where Drużyna = id),0), male_pkt_minus = coalesce((select sum(Punkty_minus) from punktacja where Drużyna = id),0), roznica_pkt = male_pkt_plus - male_pkt_minus, punkty = zwyc+roznica_pkt/10000;
+#Stworzenie triggerów do aktualizacji liczby rozegranych meczów, zdobyczy punktowych itp. (do punktów dodano małe randomowe wpisy, żeby rozgraniczyć dwie drużyny o tych samych punktach - trochę to brzydkie rozwiązanie, ale na razie tak musi być)
+create trigger po_meczu after update on mecze for each row update druzyny set mecze = (select count(*) from punktacja where Drużyna = id), zwyc = coalesce((select sum(Zwycięstwa) from punktacja where Drużyna = id),0), porazka = (select count(*) from punktacja where Zwycięstwa=0 and Drużyna = id), male_pkt_plus = coalesce((select sum(Punkty_plus) from punktacja where Drużyna = id),0), male_pkt_minus = coalesce((select sum(Punkty_minus) from punktacja where Drużyna = id),0), roznica_pkt = male_pkt_plus - male_pkt_minus, punkty = zwyc+roznica_pkt/10000+rand()/100000;
 
 #Wprowadzenie kilku wyników meczów:
 update mecze set kto_pkt = 14, z_kim_pkt = 15 where id = 1;
@@ -264,16 +268,31 @@ update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 21;
 update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 22;
 update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 23;
 update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 24;
+update mecze set kto_pkt = 15, z_kim_pkt = 14 where id = 25;
+update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 26;
+update mecze set kto_pkt = 8, z_kim_pkt = 15 where id = 27;
+update mecze set kto_pkt = 15, z_kim_pkt = 14 where id = 28;
+update mecze set kto_pkt = 15, z_kim_pkt = 9 where id = 29;
+update mecze set kto_pkt = 15, z_kim_pkt = 13 where id = 30;
+update mecze set kto_pkt = 15, z_kim_pkt = 9 where id = 31;
+update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 32;
+update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 33;
+update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 34;
+update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 35;
+update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 36;
 
 #Prezentacja wyników w jednej grupie
-select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
-select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa' from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
+select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
+select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
+select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=3 order by zwyc desc, roznica_pkt desc;
 
 #Jaka faza po fazie grupowej? (w zależności od wybranego systemu rozgrywek)
 select case when (select cwierc from systemy where id=(select * from wybrany_system))=1 then 'cwiercfinaly' when (select pol from systemy where id=(select * from wybrany_system))=1 then 'polfinaly' else 'finaly' end as 'Faza następna';
 
 #Ile drużyn awansuje po fazie grupowej?
 select case when (select cwierc from systemy where id=(select * from wybrany_system))=1 then 8 when (select pol from systemy where id=(select * from wybrany_system))=1 then 4 else 2 end as 'Ile drużyn awansuje łącznie';
+#Podstawienie pod zmienną powyższego
+set @ile_awansuje = (select case when (select cwierc from systemy where id=(select * from wybrany_system))=1 then 8 when (select pol from systemy where id=(select * from wybrany_system))=1 then 4 else 2 end as 'Ile drużyn awansuje łącznie');
 
 #Ile drużyn awansuje bezpośrednio z grupy?
 select(floor((select case when (select cwierc from systemy where id=(select * from wybrany_system))=1 then 8 when (select pol from systemy where id=(select * from wybrany_system))=1 then 4 else 2 end as Faza)/(select ilosc_gr from systemy where id=(select * from wybrany_system)))) As 'Awans bezpośredni z grupy';
@@ -337,7 +356,21 @@ update druzyny join (select max(punkty) as b from druzyny where grupa=5 and punk
 update druzyny join (select max(punkty) as b from druzyny where grupa=6 and punkty<(select max(punkty) from druzyny where grupa=6)) as tab on punkty=b set awans = case when @bezp>1 then 1 else 0 end;
 update druzyny join (select max(punkty) as b from druzyny where grupa=7 and punkty<(select max(punkty) from druzyny where grupa=7)) as tab on punkty=b set awans = case when @bezp>1 then 1 else 0 end;
 
-select * from druzyny where awans = 0 order by punkty;
+#Wstawianie awansu drużynom pozostałym (nie ma więcej niż 3):
+update druzyny join (select max(punkty) as b from druzyny where awans = 0) as tab on b = punkty set awans = case when @dodat>0 then 1 else 0 end;
+update druzyny join (select max(punkty) as b from druzyny where awans = 0) as tab on b = punkty set awans = case when @dodat>1 then 1 else 0 end;
+update druzyny join (select max(punkty) as b from druzyny where awans = 0) as tab on b = punkty set awans = case when @dodat>2 then 1 else 0 end;
+
+/*
+select a.nazwa,a.punkty,b.nazwa,b.punkty from druzyny as a join druzyny as b where a.awans = 1 and b.awans=1;
+select id from druzyny where awans = 1 order by punkty desc limit 1 offset 0;
+select id from druzyny where awans = 1 order by punkty asc limit 4;
+
+insert into mecze(faza, kto_id, z_kim_id) select 'Ćwierćfinał', (select id from druzyny where awans = 1 order by punkty desc limit 4), (select id from druzyny where awans = 1 order by punkty asc limit 4);
+insert into mecze(kto_id) select id from druzyny where awans = 1 order by punkty desc limit 4;
+
+select * from mecze;
+*/
 
 /*
 select * from logpass;
