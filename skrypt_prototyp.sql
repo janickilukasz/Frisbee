@@ -69,8 +69,21 @@ select * from systemy where ilosc_druz=(select count(*) from druzyny);
 create table wybrany_system(id tinyint);
 insert into wybrany_system values (9);
 
+#Tworzenie tabeli rozmiarów
+create table rozmiary(rozmiar varchar(2) primary key);
+insert into rozmiary values('XS');
+insert into rozmiary values('S');
+insert into rozmiary values('M');
+insert into rozmiary values('L');
+insert into rozmiary values('XL');
+
+#Tworzenie tabeli z jedzonkiem
+create table jedzenie(opcja varchar(5) primary key);
+insert into jedzenie values('mięso');
+insert into jedzenie values('wege');
+
 #Tworzenie tabeli zawodników
-create table zawodnicy(id smallint primary key auto_increment, imie tinytext not null, nazwisko tinytext not null, plec char(1) not null, poziom tinyint unsigned, pozycja varchar(7), menu varchar(5), rozmiar varchar(2) not null, druzyna tinyint, foreign key(druzyna) references druzyny(id));
+create table zawodnicy(id smallint primary key auto_increment, imie tinytext not null, nazwisko tinytext not null, plec char(1) not null, poziom tinyint unsigned, pozycja varchar(7), menu varchar(5), rozmiar varchar(2) not null, druzyna tinyint, foreign key(druzyna) references druzyny(id), foreign key(rozmiar) references rozmiary(rozmiar), foreign key(menu) references jedzenie(opcja));
 insert into zawodnicy(imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('Janek','Kowalski','M',6,'cutter','mięso','L');
 insert into zawodnicy(imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('Agata','Nowak','K',3,'cutter','mięso','M');
 insert into zawodnicy(imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('Robert','Bebech','M',8,'handler','wege','XL');
