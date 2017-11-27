@@ -12,10 +12,10 @@ create database frisbee;
 use frisbee;
 
 #Tworzenie tabeli z loginami i hasłami
-create table logpass(id smallint primary key auto_increment, login varchar(50), pass varchar(50), uprawnienia bit default 0);
+create table logpass(id smallint primary key auto_increment, login varchar(50) unique, pass varchar(50), uprawnienia boolean default false);
 
 #Przykładowe wypełnienie tabeli logpass
-insert into logpass(login, pass, uprawnienia) values ('admin','123',1);
+insert into logpass(login, pass, uprawnienia) values ('admin','123',true);
 insert into logpass(login, pass) values ('tomek','xyz');
 insert into logpass(login, pass) values ('mariola','kotek');
 insert into logpass(login, pass) values ('rysiek30','lubiechrupki');
