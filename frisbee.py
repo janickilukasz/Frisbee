@@ -14,15 +14,26 @@ class MainScreen:
     def __init__(self):
         """
         Pola metody:
-        p - połączenie z bazą danych
-        upraw - uprawnienia (0 - użytkownik, 1 - admin)
-        start - informacja czy turniej już wystartował (0 - nie, 1 - tak)
+        self.p - połączenie z bazą danych
+        self.upraw - uprawnienia (0 - użytkownik, 1 - admin)
+        self.start - informacja czy turniej już wystartował (0 - nie, 1 - tak)
+        self.login - login do systemu
+        self.player - informacja czy jest jako zawodnik w systemie (0 - nie, 1 - tak)
         """
         
         self.p = polacz
         self.start = self.file_read(0)
         print("============================\n      FRISBEE CUP 2017\n============================")
         self.log_or_sign()
+        #teraz jest sytuacja taka, że użytkownik jest zalogowany i może mieć uprawnienia administratora albo nie, i może być rozpoczęty turniej albo nie
+        if(self.start == 0 and self.upraw == 0):
+            self.new_player()
+        elif(self.start == 0 and self.upraw == 1):
+            print("Panel admina przed turniejem")
+        elif(self.start == 1 and self.upraw == 0):
+            print("Panel zawodnika po starcie turnieju")        
+        elif(self.start == 1 and self.upraw == 1):
+            print("Panel admina po starcie turnieju")
         #metody po kolei
         self.close()
 
@@ -61,14 +72,15 @@ class MainScreen:
             haslo = input("Podaj hasło:\n")
             print("")
             temp = self.p.cursor()
-            temp.execute("SELECT pass FROM logpass WHERE login='"+login+"';")
+            temp.execute("SELECT pass FROM zawodnicy WHERE login='"+login+"';")
             haslo_check = temp.fetchall()
             if(len(haslo_check)>0 and haslo_check[0][0]==haslo):
-                print("LOGOWANIE UDANE!")
+                print("LOGOWANIE UDANE!\n")
                 temp = self.p.cursor()
-                temp.execute("SELECT uprawnienia FROM logpass WHERE login='"+login+"';")
+                temp.execute("SELECT uprawnienia FROM zawodnicy WHERE login='"+login+"';")
                 upr_temp = temp.fetchall()
                 self.upraw = upr_temp[0][0]
+                self.login = login
                 break
             else:
                 tn = input("BŁĘDNY LOGIN LUB HASŁO!\n\nCzy chcesz spróbować jeszcze raz?\n1. TAK\n2. NIE\n")
@@ -84,7 +96,7 @@ class MainScreen:
             login = input("Wybierz "+tekst+"login:\n")
             print("")
             temp = self.p.cursor()
-            temp.execute("SELECT login FROM logpass WHERE login='"+login+"';")
+            temp.execute("SELECT login FROM zawodnicy WHERE login='"+login+"';")
             log_check = temp.fetchall()
             if(len(log_check)>0):
                 print("TAKI LOGIN JUŻ ISTNIEJE!\n")
@@ -103,10 +115,93 @@ class MainScreen:
                 break
 
         temp = self.p.cursor()
-        temp.execute("INSERT INTO logpass(login, pass) values ('"+login+"','"+haslo+"');")
+        temp.execute("INSERT INTO zawodnicy(login, pass) values ('"+login+"','"+haslo+"');")
         self.p.commit()
         print("REJESTRACJA POWIODŁA SIĘ!\nTERAZ MOŻESZ SIĘ ZALOGOWAĆ!\n")
         self.log()
+
+    def new_player(self):
+            temp = self.p.cursor()
+            temp.execute("select((select imie from zawodnicy where login = '"+self.login+"') is not null);")
+            player_check = temp.fetchall()
+            self.player = int(player_check[0][0])
+            print("============================\n      PANEL UŻYTKOWNIKA      \n============================")
+            if(self.player==0):
+                tn = input("Czy chcesz się zapisać na turniej?\n1. TAK\n2. NIE\n")
+                print("")
+                if(tn!="1"):
+                    print("Turniej jeszcze nie wystartował. Po więcej informacji wróć później!")
+                    self.close()
+
+                imie = input("Podaj swoje imię:\n")
+                print("")
+                nazwisko = input("Podaj swoje nazwisko:\n")
+                print("")
+
+                while True:
+                    plec = input("Podaj swoją płeć:\n1. KOBIETA\n2. MĘŻCZYZNA\n")
+                    print("")
+                    if(plec!="1" and plec !="2"):
+                        print("Coś się nie powiodło, spróbuj jeszcze raz!\n")
+                    else:
+                        if(plec=="1"):
+                            plec="K"
+                        elif(plec=="2"):
+                            plec="M"
+                        break
+
+                while True:
+                    poziom = input("Jaki jest Twój poziom gry? (1-10):\n")
+                    print("")
+                    if(poziom.isdigit() and int(poziom)>=1 and int(poziom)<=10):
+                        poziom=int(poziom)
+                        break
+                    else:
+                        print("Coś się nie powiodło, spróbuj jeszcze raz!\n")
+
+                while True:
+                    pozycja = input("Na jakiej grasz pozycji?\n1. HANDLER\n2. CUTTER\n")
+                    print("")
+                    if(pozycja!="1" and pozycja !="2"):
+                        print("Coś się nie powiodło, spróbuj jeszcze raz!\n")
+                    else:
+                        if(pozycja=="1"):
+                            pozycja="handler"
+                        elif(pozycja=="2"):
+                            pozycja="cutter"
+                        break
+
+                while True:
+                    menu = input("Jakie lubisz jedzonko?\n1. dania mięsne\n2. wegetariańskie\n")
+                    print("")
+                    if(menu!="1" and menu !="2"):
+                        print("Coś się nie powiodło, spróbuj jeszcze raz!\n")
+                    else:
+                        if(menu=="1"):
+                            menu="mięso"
+                        elif(menu=="2"):
+                            menu="wege"
+                        break
+
+                while True:
+                    rozmiar = input("Jaki jest Twój rozmiar koszulki?\n1. XS\n2. S\n3. M\n4. L\n5. XL\n")
+                    print("")
+                    if(rozmiar.isdigit() and int(rozmiar)>=1 and int(rozmiar)<=5):
+                        if(int(rozmiar)==1):
+                            rozmiar="XS"
+                        elif(int(rozmiar)==2):
+                            rozmiar="S"
+                        elif(int(rozmiar)==3):
+                            rozmiar="M"
+                        elif(int(rozmiar)==4):
+                            rozmiar="L"
+                        elif(int(rozmiar)==5):
+                            rozmiar="XL"                        
+                        break
+                    else:
+                        print("Coś się nie powiodło, spróbuj jeszcze raz!\n")
+
+                print(imie, nazwisko, plec, poziom, pozycja, menu, rozmiar)
 
     def close(self):
         self.p.close()
