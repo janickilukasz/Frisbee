@@ -26,15 +26,16 @@ class MainScreen:
         print("============================\n      FRISBEE CUP 2017\n============================")
         self.log_or_sign()
         #teraz jest sytuacja taka, że użytkownik jest zalogowany i może mieć uprawnienia administratora albo nie, i może być rozpoczęty turniej albo nie
-        if(self.start == 0 and self.upraw == 0):
-            self.new_player()
-        elif(self.start == 0 and self.upraw == 1):
-            print("Panel admina przed turniejem")
-        elif(self.start == 1 and self.upraw == 0):
-            print("Panel zawodnika po starcie turnieju")        
-        elif(self.start == 1 and self.upraw == 1):
-            print("Panel admina po starcie turnieju")
-        #metody po kolei
+        while True:
+            if(self.start == 0 and self.upraw == 0):
+                self.new_player()
+            elif(self.start == 0 and self.upraw == 1):
+                print("Panel admina przed turniejem")
+            elif(self.start == 1 and self.upraw == 0):
+                print("Panel zawodnika po starcie turnieju")        
+            elif(self.start == 1 and self.upraw == 1):
+                print("Panel admina po starcie turnieju")
+                #metody po kolei
         self.close()
 
     def file_read(self,parametr):
@@ -125,20 +126,43 @@ class MainScreen:
             temp.execute("select((select imie from zawodnicy where login = '"+self.login+"') is not null);")
             player_check = temp.fetchall()
             self.player = int(player_check[0][0])
-            print("============================\n      PANEL UŻYTKOWNIKA      \n============================")
             if(self.player==0):
-                tn = input("Czy chcesz się zapisać na turniej?\n1. TAK\n2. NIE\n")
-                print("")
-                if(tn!="1"):
-                    print("Turniej jeszcze nie wystartował. Po więcej informacji wróć później!")
-                    self.close()
+                tekst1 = "CHCĘ ZAPISAĆ SIĘ NA TURNIEJ!"
+                temp_imie = ""
+                temp_nazwisko = ""
+                temp_plec = ""
+                temp_poziom = ""
+                temp_pozycja = ""
+                temp_menu = ""
+                temp_rozmiar = ""                 
+            else:
+                tekst1 = "CHCĘ ZAKTUALIZOWAĆ MOJE DANE"
+                temp = self.p.cursor()
+                temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja, menu, rozmiar FROM zawodnicy WHERE login='"+self.login+"';")
+                krotka = temp.fetchall()
+                temp_imie = "Wcześniej wpisane imię to " + str(krotka[0][0])
+                temp_nazwisko = "Wcześniej wpisane nazwisko to " + str(krotka[0][1])
+                temp_plec = "Wcześniej podana płeć to " + str(krotka[0][2])
+                temp_poziom = "Wcześniej podany poziom gry to " + str(krotka[0][3])
+                temp_pozycja = "Wcześniej podana pozycja to " + str(krotka[0][4])
+                temp_menu = "Wcześniej zadeklarowane posiłki to " + str(krotka[0][5])
+                temp_rozmiar = "Wcześniej podany rozmiar koszulki to " + str(krotka[0][6])                               
 
+            print("======================================\n           PANEL UŻYTKOWNIKA\n======================================")
+            tn = input("Co chcesz zrobić?\n1. "+tekst1+"\n2. CHCĘ ZOBACZYĆ KTO JUŻ SIĘ ZAPISAŁ\n3. WŁAŚCIWIE TO NIC\n")
+            print("")
+
+            if(tn=="1"):
+                print(temp_imie)
                 imie = input("Podaj swoje imię:\n")
                 print("")
+                
+                print(temp_nazwisko)
                 nazwisko = input("Podaj swoje nazwisko:\n")
                 print("")
 
                 while True:
+                    print(temp_plec)
                     plec = input("Podaj swoją płeć:\n1. KOBIETA\n2. MĘŻCZYZNA\n")
                     print("")
                     if(plec!="1" and plec !="2"):
@@ -149,17 +173,18 @@ class MainScreen:
                         elif(plec=="2"):
                             plec="M"
                         break
-
+    
                 while True:
+                    print(temp_poziom)
                     poziom = input("Jaki jest Twój poziom gry? (1-10):\n")
                     print("")
                     if(poziom.isdigit() and int(poziom)>=1 and int(poziom)<=10):
-                        poziom=int(poziom)
                         break
                     else:
                         print("Coś się nie powiodło, spróbuj jeszcze raz!\n")
-
+    
                 while True:
+                    print(temp_pozycja)
                     pozycja = input("Na jakiej grasz pozycji?\n1. HANDLER\n2. CUTTER\n")
                     print("")
                     if(pozycja!="1" and pozycja !="2"):
@@ -170,8 +195,9 @@ class MainScreen:
                         elif(pozycja=="2"):
                             pozycja="cutter"
                         break
-
+    
                 while True:
+                    print(temp_menu)
                     menu = input("Jakie lubisz jedzonko?\n1. dania mięsne\n2. wegetariańskie\n")
                     print("")
                     if(menu!="1" and menu !="2"):
@@ -182,8 +208,9 @@ class MainScreen:
                         elif(menu=="2"):
                             menu="wege"
                         break
-
+    
                 while True:
+                    print(temp_rozmiar)
                     rozmiar = input("Jaki jest Twój rozmiar koszulki?\n1. XS\n2. S\n3. M\n4. L\n5. XL\n")
                     print("")
                     if(rozmiar.isdigit() and int(rozmiar)>=1 and int(rozmiar)<=5):
@@ -201,11 +228,34 @@ class MainScreen:
                     else:
                         print("Coś się nie powiodło, spróbuj jeszcze raz!\n")
 
-                print(imie, nazwisko, plec, poziom, pozycja, menu, rozmiar)
+                temp = self.p.cursor()
+                temp.execute("UPDATE zawodnicy SET imie = '" + imie + "', nazwisko = '" + nazwisko + "', plec = '" + plec + "', poziom = " + poziom + ", pozycja = '"+pozycja+"', menu = '"+menu+"', rozmiar = '" + rozmiar + "' WHERE login = '" + self.login + "';")
+                self.p.commit()
+
+                if(self.player==0):
+                    print(imie.upper() + ", REJESTRACJA NA TURNIEJ POWIODŁA SIĘ!\n")
+                elif(self.player==1):
+                    print(imie.upper() + ", ZMIANA DANYCH POWIODŁA SIĘ!\n")
+
+            elif(tn=="2"):
+                temp = self.p.cursor()
+                temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja FROM zawodnicy WHERE imie IS NOT NULL;")
+                krotka = temp.fetchall()
+                print("================= LISTA ZAPISANYCH ZAWODNIKÓW =================")
+                print("%-5s|%-15s|%-15s|%-10s|%-10s|%-10s" % ('LP.','IMIĘ','NAZWISKO','PŁEĆ','POZIOM','POZYCJA'))
+                print("---------------------------------------------------------------")
+                licznik=0
+                for i in krotka:
+                    licznik = licznik + 1
+                    print("%-5i|%-15s|%-15s|%-10s|%-10s|%-10s" % (licznik,i[0],i[1],i[2],i[3],i[4]))
+                print("")
+
+            else:
+                self.close()
 
     def close(self):
         self.p.close()
-        print("THE END")
+        print("DZIĘKUJEMY I ZAPRASZAMY PONOWNIE!\n")
         exit()
 
 
