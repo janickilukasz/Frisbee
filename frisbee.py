@@ -266,6 +266,7 @@ class MainScreen:
             tn = input("Co chcesz zrobić?\n------------------------------------------------\n1. ROZPOCZĄĆ TURNIEJ!\n------------------------------------------------\n2. ZOBACZYĆ SZCZEGÓŁOWĄ LISTĘ UŻYTKOWNIKÓW\n3. DODAĆ UPRAWNIENIA ADMINISTRATORA\n4. SPRAWDZIĆ STATYSTYKI ZAPISANYCH\n5. PRZEŁĄCZYĆ SIĘ NA PANEL ZAWODNIKA\n6. WŁAŚCIWIE TO NIC\n")
             print("")
             if(tn=="1"):
+                #TUTAJ!!!
                 print("Startujemy z turniejem!")
             elif(tn=="2"):
                 temp = self.p.cursor()
@@ -347,8 +348,25 @@ class MainScreen:
                     ilosc = krotka[0][0]
                     print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- na poziomie "+str(i)+":", str(ilosc), "   ---", str(round((ilosc/suma_zaw)*100)), "%"))                 
                 ile_druz = round(suma_zaw/15)
-                #TUTAJ!!!!!
-                print("\nZalecana ilość drużyn: " + str(ile_druz))
+                temp = self.p.cursor()
+                temp.execute("SELECT DISTINCT ilosc_druz FROM systemy;")
+                krotka = temp.fetchall()
+                naj = 100
+                licznik = 0
+                for i in krotka:
+                    rozn = abs(ile_druz-i[0])
+                    if(rozn<naj):
+                        naj = rozn
+                        best_krotka = licznik
+                    licznik = licznik + 1
+                tekst1 = ""
+                if(best_krotka!=0):
+                    tekst1 = str(krotka[best_krotka-1][0]) + ", "
+                tekst2 = str(krotka[best_krotka][0])
+                tekst3 = ""
+                if(best_krotka!=len(krotka)-1):
+                    tekst3 = ", " + str(krotka[best_krotka+1][0])
+                print("\nZalecane ilości drużyn: " + tekst1 + tekst2 + tekst3)
                 print("")
             elif(tn=="5"):
                 self.player_before()
