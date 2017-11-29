@@ -8,7 +8,7 @@ drop table if exists frisbee.systemy;
 drop database if exists frisbee;
 
 #Tworzenie bazy danych
-create database frisbee;
+create database frisbee DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;
 use frisbee;
 
 /*#Tworzenie tabeli z loginami i hasłami
