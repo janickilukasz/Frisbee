@@ -1,1 +1,4 @@
-0000 PARAMETR nr 0 "START" : czy turniej ju¿ wystartowa³? (0- nie, 1- tak)
+0000
+
+
+PARAMETR nr 0 "START" : czy turniej ju¿ wystartowa³? (0- nie, 1- tak)

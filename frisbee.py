@@ -20,20 +20,23 @@ class MainScreen:
         self.login - login do systemu
         self.player - informacja czy jest jako zawodnik w systemie (0 - nie, 1 - tak)
         """
-        
+
         self.p = polacz
         self.start = self.file_read(0)
         print("================================================\n               FRISBEE CUP 2017\n================================================")
         self.log_or_sign()
         #teraz jest sytuacja taka, że użytkownik jest zalogowany i może mieć uprawnienia administratora albo nie, i może być rozpoczęty turniej albo nie
-        if(self.start == 0 and self.upraw == 0):
-            self.player_before()
-        elif(self.start == 0 and self.upraw == 1):
-            self.admin_before()
-        elif(self.start == 1 and self.upraw == 0):
-            print("Panel zawodnika po starcie turnieju")        
-        elif(self.start == 1 and self.upraw == 1):
-            print("Panel admina po starcie turnieju")
+        
+        if self.start == 0:
+            if self.upraw == 0:
+                self.player_before()
+            elif self.upraw == 1:
+                self.admin_before()
+        if self.start == 1:
+            if self.upraw == 0:
+                print("Panel zawodnika po starcie turnieju")        
+            elif self.upraw == 1:
+                print("Panel admina po starcie turnieju")
             #metody po kolei
         self.close()
 
@@ -45,10 +48,16 @@ class MainScreen:
             par_val = int(temp.readlines()[int(parametr)][:4])
             temp.close()
             return par_val
-
         else:
             print("Błąd przy odczytywaniu pliku.")
             self.close()
+#TO NIE DZIAŁA !!! Usuwa całą zawartość pliku zamiast tylko jeden wiersz!
+    #def file_write(self,parametr,value):
+        ##Tutaj już nie sprawdzam czy plik istnieje, bo zostało to sprawdzone w metodzie file_read
+        #temp = open("proj_src/parametry.txt","w")
+        #temp.seek(4*parametr)
+        #temp.write("\n"+value)
+        #temp.close()
 
     def log_or_sign(self):
         while True:
@@ -261,13 +270,86 @@ class MainScreen:
                 self.close()
 
     def admin_before(self):
-        while True:
+        uciekacz_zewnetrzny = 0
+        while uciekacz_zewnetrzny == 0:
             print("================================================\n              PANEL ADMINISTRATORA\n================================================")
             tn = input("Co chcesz zrobić?\n------------------------------------------------\n1. ROZPOCZĄĆ TURNIEJ!\n------------------------------------------------\n2. ZOBACZYĆ SZCZEGÓŁOWĄ LISTĘ UŻYTKOWNIKÓW\n3. DODAĆ UPRAWNIENIA ADMINISTRATORA\n4. SPRAWDZIĆ STATYSTYKI ZAPISANYCH\n5. PRZEŁĄCZYĆ SIĘ NA PANEL ZAWODNIKA\n6. WŁAŚCIWIE TO NIC\n")
             print("")
             if(tn=="1"):
-                #TUTAJ!!!
-                print("Startujemy z turniejem!")
+                print("================================================\n               USTAWIENIA TURNIEJU\n================================================")
+                temp = self.p.cursor()
+                temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL")
+                krotka = temp.fetchall()
+                suma_zaw = krotka[0][0]
+                propozycje = self.team_vol(suma_zaw,2)
+                print("Na turniej zapisanych jest " + str(suma_zaw) + " zawodników.\nProponowane ilości drużyn:")
+                for i in propozycje:
+                    dodatek = ""
+                    if i<10:
+                        dodatek = " "
+                    if i<5:
+                        dodatek = "y"
+                    print("  "+str(i), end=" drużyn" + dodatek + "  -  zawodników w drużynie: "+ str(round(suma_zaw/i)) +"\n")
+                uciekacz = 0
+                while uciekacz == 0:
+                    decyzja = input("Ile chcesz stworzyć drużyn?\n")
+                    print("")
+                    if (decyzja.isdigit() and (int(decyzja) in propozycje)):
+                        temp = self.p.cursor()
+                        temp.execute("SELECT count(*) FROM systemy WHERE ilosc_druz = " + str(decyzja) + ";")
+                        krotka = temp.fetchall()
+                        ile_sys = krotka[0][0]
+                        
+                        temp = self.p.cursor()
+                        temp.execute("SELECT * FROM systemy WHERE ilosc_druz = " + str(decyzja) + ";")
+                        krotka = temp.fetchall()
+                        
+                        if ile_sys>1:
+                            print("Proponowane systemy rozgrywek:")
+                        elif ile_sys==1:
+                            print("Wybrano ten system:")
+                        print("---------------------------------------------------------------")
+                        print("Nr | Ilość | Ilość drużyn | Ćwierćfinały | Półfinały | Rewanże ")
+                        print("   | grup  |   w grupie   |              |           |         ")
+                        print("---------------------------------------------------------------")
+                        licznik = 0
+                        for i in krotka:
+                            licznik = licznik + 1
+                            print("%-3i|   %-3i |      %-3i     |     %-3i      |     %-3i   |    %-3i  " % (licznik, i[2],int(decyzja)/i[2],i[3],i[4],i[5]))                        
+                        print("---------------------------------------------------------------\n")
+                        while True:
+                            wybrany = 0
+                            if ile_sys>1:
+                                odpowiedz = input("Jaki system wybierasz?\n")
+                                print("")
+                                if ile_sys>1 and odpowiedz.isdigit() and int(odpowiedz)>0 and int(odpowiedz)<=ile_sys:
+                                    print("WYBRANO SYSTEM!")
+                                    wybrany = int(odpowiedz)
+                                else:
+                                    print("Coś jest nie tak")
+                            if ile_sys==1 or wybrany > 0:
+                                odpowiedz = input("CZY ZATWIERDZASZ TEN SYSTEM? (T/N)\n")
+                                print("")
+                                if odpowiedz.upper()=="T":
+                                    if ile_sys==1:
+                                        system_gry = krotka[0][0]
+                                    elif ile_sys>1:
+                                        system_gry = krotka[wybrany-1][0]
+                #======================= TUTAJ JEST WYBÓR SYSTEMU ROZGRYWEK !!! ===========================
+                                    print("ZATWIERDZONO SYSTEM!\n")
+                                    self.start = 1
+                                    uciekacz = 1
+                                    uciekacz_zewnetrzny = 1
+                                    break
+                                else:
+                                    print("NIE WYBRANO SYSTEMU ROZGRYWEK\nTURNIEJ NIE JEST ROZPOCZĘTY!\n")
+                                    uciekacz = 1
+                                    break                            
+                                
+            
+                    else:
+                        print("NIE MOŻNA WYBRAĆ TAKIEJ ILOŚCI DRUŻYN!\n")
+                
             elif(tn=="2"):
                 temp = self.p.cursor()
                 temp.execute("SELECT login, uprawnienia, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar FROM zawodnicy;")
@@ -347,32 +429,40 @@ class MainScreen:
                     krotka = temp.fetchall()
                     ilosc = krotka[0][0]
                     print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- na poziomie "+str(i)+":", str(ilosc), "   ---", str(round((ilosc/suma_zaw)*100)), "%"))                 
-                ile_druz = round(suma_zaw/15)
-                temp = self.p.cursor()
-                temp.execute("SELECT DISTINCT ilosc_druz FROM systemy;")
-                krotka = temp.fetchall()
-                naj = 100
-                licznik = 0
-                for i in krotka:
-                    rozn = abs(ile_druz-i[0])
-                    if(rozn<naj):
-                        naj = rozn
-                        best_krotka = licznik
-                    licznik = licznik + 1
-                tekst1 = ""
-                if(best_krotka!=0):
-                    tekst1 = str(krotka[best_krotka-1][0]) + ", "
-                tekst2 = str(krotka[best_krotka][0])
-                tekst3 = ""
-                if(best_krotka!=len(krotka)-1):
-                    tekst3 = ", " + str(krotka[best_krotka+1][0])
-                print("\nZalecane ilości drużyn: " + tekst1 + tekst2 + tekst3)
-                print("")
+                wynik = self.team_vol(suma_zaw,1)
+                print("\nProponowana ilość drużyn:     " + str(wynik)[1:-1] + "\n")
+
             elif(tn=="5"):
                 self.player_before()
             else:
                 self.close()
-
+    
+    #funkcja zwraca krotkę z polecanymi ilościami drużyn w zależności od zadanych parametrów: players - ilość zawodników, spread - rozrzut wyników (max 2 w góre i w dół)
+    def team_vol(self,players,spread):
+        ile_druz = round(players/15)
+        temp = self.p.cursor()
+        temp.execute("SELECT DISTINCT ilosc_druz FROM systemy;")
+        krotka = temp.fetchall()
+        naj = 100
+        licznik = 0
+        for i in krotka:
+            rozn = abs(ile_druz-i[0])
+            if(rozn<naj):
+                naj = rozn
+                best_krotka = licznik
+            licznik = licznik + 1
+        wynik = ()
+        if(best_krotka>1 and spread>1):
+            wynik+=krotka[best_krotka-2]
+        if(best_krotka>0 and spread>0):
+            wynik+=krotka[best_krotka-1] 
+        wynik+=krotka[best_krotka]
+        if((best_krotka<len(krotka)-1) and spread>0):
+            wynik+=krotka[best_krotka+1]
+        if((best_krotka<len(krotka)-2) and spread>1):
+            wynik+=krotka[best_krotka+2] 
+        return wynik
+        
     def close(self):
         self.p.close()
         print("================================================\n         DZIĘKUJEMY I ZAPRASZAMY PONOWNIE!\n================================================")
