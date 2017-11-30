@@ -21,6 +21,7 @@ class MainScreen:
         self.player - informacja czy jest jako zawodnik w systemie (0 - nie, 1 - tak)
         """
 
+
         self.p = polacz
         self.start = self.file_read(0)
         print("================================================\n               FRISBEE CUP 2017\n================================================")
@@ -51,12 +52,20 @@ class MainScreen:
         else:
             print("Błąd przy odczytywaniu pliku.")
             self.close()
-#TO NIE DZIAŁA !!! Usuwa całą zawartość pliku zamiast tylko jeden wiersz!
-    #def file_write(self,parametr,value):
-        ##Tutaj już nie sprawdzam czy plik istnieje, bo zostało to sprawdzone w metodzie file_read
+
+    def file_write(self,parametr,value):
+        temp = open("proj_src/parametry.txt","r")
+        czytanko = temp.readlines()
+        czytanko[parametr] = value+"\n"
+        temp.close()
+        
+        temp = open("proj_src/parametry.txt","w")
+        temp.writelines(czytanko)
+        temp.close()        
+        #Tutaj już nie sprawdzam czy plik istnieje, bo zostało to sprawdzone w metodzie file_read
         #temp = open("proj_src/parametry.txt","w")
         #temp.seek(4*parametr)
-        #temp.write("\n"+value)
+        #temp.writelines(["\n"+value])
         #temp.close()
 
     def log_or_sign(self):
@@ -337,6 +346,10 @@ class MainScreen:
                                         system_gry = krotka[wybrany-1][0]
                 #======================= TUTAJ JEST WYBÓR SYSTEMU ROZGRYWEK !!! ===========================
                                     print("ZATWIERDZONO SYSTEM!\n")
+                                    self.team_insert(decyzja)#wpisywanie drużyn
+                                    self.player_shuffle(decyzja)#losowanie zawodników do drużyn
+                                    self.file_write(0,"0001")#zmiana parametru START
+                                    self.file_write(1,"%04i" % (system_gry))#zmiana parametru SYSTEM
                                     self.start = 1
                                     uciekacz = 1
                                     uciekacz_zewnetrzny = 1
@@ -462,6 +475,19 @@ class MainScreen:
         if((best_krotka<len(krotka)-2) and spread>1):
             wynik+=krotka[best_krotka+2] 
         return wynik
+
+    def team_insert(self,ile):
+        for i in range(int(ile)):
+            n = input("Podaj nazwę drużyny nr " + str(int(i)+1) + ":\n")
+            print("")
+            k = input("Podaj kolor koszulek drużyny nr " + str(int(i)+1) + ":\n")
+            print("")            
+            temp = self.p.cursor()
+            temp.execute("INSERT INTO druzyny(nazwa, kolor) VALUES ('"+n+"','"+k+"');")
+            self.p.commit()
+            
+    def player_shuffle(self,teams):
+        print("Losowanie!")
         
     def close(self):
         self.p.close()

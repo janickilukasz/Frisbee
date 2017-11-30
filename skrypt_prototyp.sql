@@ -25,25 +25,25 @@ insert into logpass(login, pass) values ('muniek_krakow','mariolka');
 
 #Tworzenie tabeli systemów (lista jest stała, można potem dodać jakieś możliwość modyfikacji)
 #kolumna rewanże = 1 - są rewanże, 0 - nie ma rewanżów
-create table systemy(id tinyint primary key auto_increment, ilosc_druz tinyint, ilosc_gr tinyint, cwierc bit, pol bit, final bit, rewanze bit);
+create table systemy(id tinyint primary key auto_increment, ilosc_druz tinyint, ilosc_gr tinyint, cwierc boolean, pol boolean, rewanze boolean);
 
 #Uzupełnianie tabeli systemów
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(4,1,0,0,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(5,1,0,0,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(6,1,0,0,1,0);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(6,2,0,0,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(8,2,0,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(9,3,0,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(10,2,0,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(12,2,0,1,1,0);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(12,3,1,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(12,4,1,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(15,3,1,1,1,0);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(16,4,1,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(18,6,1,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(20,4,1,1,1,0);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(20,5,1,1,1,1);
-insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, final, rewanze) values(21,7,1,1,1,1);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(4,1,false,false,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(5,1,false,false,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(6,1,false,false,false);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(6,2,false,false,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(8,2,false,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(9,3,false,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(10,2,false,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(12,2,false,true,false);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(12,3,true,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(12,4,true,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(15,3,true,true,false);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(16,4,true,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(18,6,true,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(20,4,true,true,false);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(20,5,true,true,true);
+insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(21,7,true,true,true);
 
 #Tworzenie tabeli z drużynami (awans = 1 to awans do ćwierćfinały, awans = 2 do półfinały, awans = 3 do finału)
 create table druzyny(id tinyint primary key auto_increment, nazwa tinytext, kolor varchar(20), grupa tinyint, mecze tinyint default 0, zwyc tinyint default 0, porazka tinyint default 0, punkty float default 0, male_pkt_plus smallint default 0, male_pkt_minus smallint default 0, roznica_pkt smallint default 0, awans tinyint default 0, miejsce tinyint);
@@ -63,7 +63,7 @@ insert into druzyny(nazwa, kolor) values ('Papieże','złoty');
 insert into druzyny(nazwa, kolor) values ('Gołębie','seledynowy');
 
 #Lista systemów rozgrywek dla wybranej ilości drużyn
-select * from systemy where ilosc_druz=(select count(*) from druzyny);
+#select * from systemy where ilosc_druz=(select count(*) from druzyny);
 
 #DO WYWALENIA:
 #Wybrany system(to będzie przechowywane w zmiennej):
@@ -179,7 +179,7 @@ insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, 
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jjasinski','j8ski10','Jarosław','Jasiński','M',4,'cutter','mięso','M');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('mostrowski','m14ski1','Marcin','Ostrowski','M',10,'handler','mięso','L');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('rsawicki','r57cki9','Rafał','Sawicki','M',2,'handler','mięso','XL');
-insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('sstępien','s1ień9','Stanisław','Stępień','M',6,'handler','mięso','XS');
+insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('sstepien','s1ień9','Stanisław','Stępień','M',6,'handler','mięso','XS');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('wzakrzewski','w34ski10','Władysław','Zakrzewski','M',7,'cutter','mięso','L');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('sziolkowski','s18ski3','Stanisław','Ziółkowski','M',8,'handler','mięso','S');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('mmazurek','m16rek0','Mirosław','Mazurek','M',4,'cutter','mięso','M');
@@ -213,13 +213,19 @@ insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, 
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('wmazurek','w55rek4','Waldemar','Mazurek','M',2,'cutter','wege','M');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jsadowski','j39ski4','Jarosław','Sadowski','M',7,'cutter','mięso','XL');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('mjankowski','m11ski0','Marian','Jankowski','M',9,'cutter','mięso','S');
-insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jwoźniak','j13iak3','Jan','Woźniak','M',9,'handler','mięso','L');
+insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jwozniak','j13iak3','Jan','Woźniak','M',9,'handler','mięso','L');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('lwalczak','ł4zak1','Łukasz','Walczak','M',5,'handler','mięso','XS');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jwrobel','j39bel5','Jan','Wróbel','M',9,'cutter','mięso','M');
 
 
 #Przypisanie zawodników do drużyny (na razie losowo)
 update zawodnicy set druzyna = ceil((select count(*) from druzyny)*rand());
+
+# UPDATE TYLKO DLA LIMIT!!! BARDZO FAJNA SZTUCZKA! TYLKO CHYBA MAŁO PRZYDATNA :/
+select id, plec, poziom, pozycja, druzyna from zawodnicy where plec = 'M' order by poziom desc limit 10;
+select id from druzyny;
+update zawodnicy set druzyna = 7 where id in (select id from (select id from zawodnicy where plec = 'M' order by poziom desc limit 10) as temp);
+
 
 #Ile będzie potrzebne obiadów
 select menu, count(*) As ile from zawodnicy where menu is not null group by menu;
