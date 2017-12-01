@@ -21,13 +21,11 @@ class MainScreen:
         self.player - informacja czy jest jako zawodnik w systemie (0 - nie, 1 - tak)
         """
 
-
         self.p = polacz
         self.start = self.file_read(0)
         print("================================================\n               FRISBEE CUP 2017\n================================================")
         self.log_or_sign()
         #teraz jest sytuacja taka, że użytkownik jest zalogowany i może mieć uprawnienia administratora albo nie, i może być rozpoczęty turniej albo nie
-        
         if self.start == 0:
             if self.upraw == 0:
                 self.player_before()
@@ -261,23 +259,26 @@ class MainScreen:
                     print(imie.upper() + ", ZMIANA DANYCH POWIODŁA SIĘ!\n")
 
             elif(tn=="2"):
-                temp = self.p.cursor()
-                temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja FROM zawodnicy WHERE imie IS NOT NULL;")
-                krotka = temp.fetchall()
-                print("================= LISTA ZAPISANYCH ZAWODNIKÓW =================")
-                print("%-5s|%-15s|%-15s|%-10s|%-10s|%-10s" % ('LP.','IMIĘ','NAZWISKO','PŁEĆ','POZIOM','POZYCJA'))
-                print("---------------------------------------------------------------")
-                licznik=0
-                for i in krotka:
-                    licznik = licznik + 1
-                    print("%-5i|%-15s|%-15s|%-10s|%-10s|%-10s" % (licznik,i[0],i[1],i[2],i[3],i[4]))
-                print("")
+                self.who_play()
 
             elif(tn=="4" and self.upraw==1):
                 break
             else:
                 self.close()
 
+    def who_play(self):
+        temp = self.p.cursor()
+        temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja FROM zawodnicy WHERE imie IS NOT NULL;")
+        krotka = temp.fetchall()
+        print("================= LISTA ZAPISANYCH ZAWODNIKÓW =================")
+        print("%-5s|%-15s|%-15s|%-10s|%-10s|%-10s" % ('LP.','IMIĘ','NAZWISKO','PŁEĆ','POZIOM','POZYCJA'))
+        print("---------------------------------------------------------------")
+        licznik=0
+        for i in krotka:
+            licznik = licznik + 1
+            print("%-5i|%-15s|%-15s|%-10s|%-10s|%-10s" % (licznik,i[0],i[1],i[2],i[3],i[4]))
+        print("")
+    
     def admin_before(self):
         uciekacz_zewnetrzny = 0
         while uciekacz_zewnetrzny == 0:
@@ -347,9 +348,25 @@ class MainScreen:
                 #======================= TUTAJ JEST WYBÓR SYSTEMU ROZGRYWEK !!! ===========================
                                     print("ZATWIERDZONO SYSTEM!\n")
                                     self.team_insert(decyzja)#wpisywanie drużyn
+                                    self.file_write(2,"%04i" % (int(decyzja)))#zmiana parametru DRUŻYNY
                                     self.player_shuffle(decyzja)#losowanie zawodników do drużyn
+                                    #przydzielenie do grup
+                                    temp = self.p.cursor()
+                                    temp.execute("update druzyny set grupa = ceil((id/"+decyzja+")*(select ilosc_gr from systemy where id="+str(system_gry)+"));")
+                                    self.p.commit()
+                                    #tworzenie meczów
+                                    temp = self.p.cursor()
+                                    temp.execute("SELECT rewanze FROM systemy WHERE id = "+str(system_gry)+";")
+                                    krotka = temp.fetchall()
+                                    rewanze = krotka[0][0]#to jest int(1 albo 0)
+                                    
+                                    temp = self.p.cursor()
+                                    temp.execute("INSERT INTO mecze(faza, kto_id, z_kim_id) SELECT 'Faza grupowa', a.id, b.id from druzyny as a join druzyny as b where case when "+str(rewanze)+" then a.id!=b.id else a.id>b.id end and a.grupa=b.grupa;")                                    
+                                    self.p.commit()
+                                    
                                     self.file_write(0,"0001")#zmiana parametru START
                                     self.file_write(1,"%04i" % (system_gry))#zmiana parametru SYSTEM
+                                    
                                     self.start = 1
                                     uciekacz = 1
                                     uciekacz_zewnetrzny = 1
@@ -364,91 +381,101 @@ class MainScreen:
                         print("NIE MOŻNA WYBRAĆ TAKIEJ ILOŚCI DRUŻYN!\n")
                 
             elif(tn=="2"):
-                temp = self.p.cursor()
-                temp.execute("SELECT login, uprawnienia, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar FROM zawodnicy;")
-                krotka = temp.fetchall()
-                print("=============================================== LISTA UŻYTKOWNIKÓW ==============================================")
-                print("%-5s|%-15s|%-7s|%-15s|%-15s|%-10s|%-10s|%-10s|%-10s|%-10s" % ('LP.','LOGIN','ADMIN','IMIĘ','NAZWISKO','PŁEĆ','POZIOM','POZYCJA','MENU','ROZMIAR'))
-                print("-----------------------------------------------------------------------------------------------------------------")
-                licznik=0
-                for i in krotka:
-                    licznik = licznik + 1
-                    print("%-5s|%-15s|%-7s|%-15s|%-15s|%-10s|%-10s|%-10s|%-10s|%-10s" % (licznik,i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8]))
-                print("")
+                self.who_use()
+
             elif(tn=="3"):
-                login_adm = input("PODAJ LOGIN OSOBY, KTÓREJ CHCESZ NADAĆ UPRAWNIENIA ADMINA:\n")
-                print("")
-                temp = self.p.cursor()
-                temp.execute("SELECT((SELECT login FROM zawodnicy WHERE login = '"+login_adm+"') is not null);")
-                krotka = temp.fetchall()
-                if(int(krotka[0][0])==1):
-                    temp = self.p.cursor()
-                    temp.execute("SELECT uprawnienia FROM zawodnicy WHERE login = '"+login_adm+"';")
-                    krotka = temp.fetchall()
-                    if(int(krotka[0][0])==0):
-                        temp = self.p.cursor()
-                        temp.execute("UPDATE zawodnicy SET uprawnienia = true WHERE login = '"+login_adm+"';")
-                        self.p.commit()
-                        print("UŻYTKOWNIKOWI " + login_adm + " NADANO UPRAWNIENIA ADMINISTRATORA\n")
-                    else:
-                        print("TEN UŻYTKOWNIK JUŻ MA UPRAWNIENIA ADMINISTRATORA!\n")
-                else:
-                    print("TAKI LOGIN NIE ISTNIEJE!\n")
+                self.admin_plus()
 
             elif(tn=="4"):
-                print("================== STATYSTYKI ==================")
-                temp = self.p.cursor()
-                temp.execute("SELECT count(*) FROM zawodnicy ")
-                krotka = temp.fetchall()
-                print("%-30s%-3s" % ("Ilość użytkowników: ",str(krotka[0][0])))
-
-                temp = self.p.cursor()
-                temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL")
-                krotka = temp.fetchall()
-                suma_zaw = krotka[0][0]
-                print("%-30s%-3s" % ("Ilość zapisanych zawodników: ",str(suma_zaw)))
-                
-                temp = self.p.cursor()
-                temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND plec = 'K'")
-                krotka_k = temp.fetchall()
-                suma_k = krotka_k[0][0]
-                print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- kobiet:", str(suma_k), "   ---", str(round((suma_k/suma_zaw)*100)), "%"))
-                
-                temp = self.p.cursor()
-                temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND plec = 'M'")
-                krotka_m = temp.fetchall()
-                suma_m = krotka_m[0][0]
-                print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- mężczyzn:", str(suma_m), "   ---", str(round((suma_m/suma_zaw)*100)), "%"))              
-                
-                print("         ---------------------------------------")
-                
-                temp = self.p.cursor()
-                temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND pozycja = 'handler'")
-                krotka_h = temp.fetchall()
-                suma_h = krotka_h[0][0]
-                print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- handlerów:", str(suma_h), "   ---", str(round((suma_h/suma_zaw)*100)), "%"))                
-                
-                temp = self.p.cursor()
-                temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND pozycja = 'cutter'")
-                krotka_c = temp.fetchall()
-                suma_c = krotka_c[0][0]
-                print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- cutterów:", str(suma_c), "   ---", str(round((suma_c/suma_zaw)*100)), "%"))                
-                
-                print("         ---------------------------------------")
-                
-                for i in range(1,11):
-                    temp = self.p.cursor()
-                    temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND poziom = " + str(i))
-                    krotka = temp.fetchall()
-                    ilosc = krotka[0][0]
-                    print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- na poziomie "+str(i)+":", str(ilosc), "   ---", str(round((ilosc/suma_zaw)*100)), "%"))                 
-                wynik = self.team_vol(suma_zaw,1)
-                print("\nProponowana ilość drużyn:     " + str(wynik)[1:-1] + "\n")
+                self.stats()
 
             elif(tn=="5"):
                 self.player_before()
             else:
                 self.close()
+    
+    def who_use(self):
+        temp = self.p.cursor()
+        temp.execute("SELECT login, uprawnienia, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar FROM zawodnicy;")
+        krotka = temp.fetchall()
+        print("=============================================== LISTA UŻYTKOWNIKÓW ==============================================")
+        print("%-5s|%-15s|%-7s|%-15s|%-15s|%-10s|%-10s|%-10s|%-10s|%-10s" % ('LP.','LOGIN','ADMIN','IMIĘ','NAZWISKO','PŁEĆ','POZIOM','POZYCJA','MENU','ROZMIAR'))
+        print("-----------------------------------------------------------------------------------------------------------------")
+        licznik=0
+        for i in krotka:
+            licznik = licznik + 1
+            print("%-5s|%-15s|%-7s|%-15s|%-15s|%-10s|%-10s|%-10s|%-10s|%-10s" % (licznik,i[0],i[1],i[2],i[3],i[4],i[5],i[6],i[7],i[8]))
+        print("")
+    
+    def admin_plus(self):
+        login_adm = input("PODAJ LOGIN OSOBY, KTÓREJ CHCESZ NADAĆ UPRAWNIENIA ADMINA:\n")
+        print("")
+        temp = self.p.cursor()
+        temp.execute("SELECT((SELECT login FROM zawodnicy WHERE login = '"+login_adm+"') is not null);")
+        krotka = temp.fetchall()
+        if(int(krotka[0][0])==1):
+            temp = self.p.cursor()
+            temp.execute("SELECT uprawnienia FROM zawodnicy WHERE login = '"+login_adm+"';")
+            krotka = temp.fetchall()
+            if(int(krotka[0][0])==0):
+                temp = self.p.cursor()
+                temp.execute("UPDATE zawodnicy SET uprawnienia = true WHERE login = '"+login_adm+"';")
+                self.p.commit()
+                print("UŻYTKOWNIKOWI " + login_adm + " NADANO UPRAWNIENIA ADMINISTRATORA\n")
+            else:
+                print("TEN UŻYTKOWNIK JUŻ MA UPRAWNIENIA ADMINISTRATORA!\n")
+        else:
+            print("TAKI LOGIN NIE ISTNIEJE!\n")
+    
+    def stats(self):
+        print("================== STATYSTYKI ==================")
+        temp = self.p.cursor()
+        temp.execute("SELECT count(*) FROM zawodnicy ")
+        krotka = temp.fetchall()
+        print("%-30s%-3s" % ("Ilość użytkowników: ",str(krotka[0][0])))
+
+        temp = self.p.cursor()
+        temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL")
+        krotka = temp.fetchall()
+        suma_zaw = krotka[0][0]
+        print("%-30s%-3s" % ("Ilość zapisanych zawodników: ",str(suma_zaw)))
+        
+        temp = self.p.cursor()
+        temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND plec = 'K'")
+        krotka_k = temp.fetchall()
+        suma_k = krotka_k[0][0]
+        print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- kobiet:", str(suma_k), "   ---", str(round((suma_k/suma_zaw)*100)), "%"))
+        
+        temp = self.p.cursor()
+        temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND plec = 'M'")
+        krotka_m = temp.fetchall()
+        suma_m = krotka_m[0][0]
+        print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- mężczyzn:", str(suma_m), "   ---", str(round((suma_m/suma_zaw)*100)), "%"))              
+        
+        print("         ---------------------------------------")
+        
+        temp = self.p.cursor()
+        temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND pozycja = 'handler'")
+        krotka_h = temp.fetchall()
+        suma_h = krotka_h[0][0]
+        print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- handlerów:", str(suma_h), "   ---", str(round((suma_h/suma_zaw)*100)), "%"))                
+        
+        temp = self.p.cursor()
+        temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND pozycja = 'cutter'")
+        krotka_c = temp.fetchall()
+        suma_c = krotka_c[0][0]
+        print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- cutterów:", str(suma_c), "   ---", str(round((suma_c/suma_zaw)*100)), "%"))                
+        
+        print("         ---------------------------------------")
+        
+        for i in range(1,11):
+            temp = self.p.cursor()
+            temp.execute("SELECT count(*) FROM zawodnicy WHERE imie IS NOT NULL AND poziom = " + str(i))
+            krotka = temp.fetchall()
+            ilosc = krotka[0][0]
+            print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- na poziomie "+str(i)+":", str(ilosc), "   ---", str(round((ilosc/suma_zaw)*100)), "%"))                 
+        wynik = self.team_vol(suma_zaw,1)
+        print("\nProponowana ilość drużyn:     " + str(wynik)[1:-1] + "\n")
     
     #funkcja zwraca krotkę z polecanymi ilościami drużyn w zależności od zadanych parametrów: players - ilość zawodników, spread - rozrzut wyników (max 2 w góre i w dół)
     def team_vol(self,players,spread):
@@ -487,8 +514,38 @@ class MainScreen:
             self.p.commit()
             
     def player_shuffle(self,teams):
-        print("Losowanie!")
+        temp = self.p.cursor()
+        temp.execute("SELECT id FROM zawodnicy ORDER BY poziom DESC")
+        wszyscy = temp.fetchall()
+        druzyn = self.file_read(2)
+        for i in range(druzyn):
+            krotka_temp = ()
+            for j in wszyscy[i::druzyn]:
+                krotka_temp+=(j[0],)
+            temp = self.p.cursor()
+            temp.execute("UPDATE zawodnicy SET druzyna = "+str(i+1)+" WHERE id IN "+ str(krotka_temp) + ";")            
+        self.p.commit()
         
+    def menu_stats(self):
+        temp = self.p.cursor()
+        temp.execute("SELECT menu, count(*) As ile FROM zawodnicy WHERE menu IS NOT NULL GROUP by menu;")
+        obiadki = temp.fetchall()
+        print(" --------------------- ")
+        print("|%-10s|%-10s|" % ("  MENU","  ILOŚĆ"))
+        print("|----------|----------|")
+        for i in obiadki:
+            print("|%10s|%10s|" % (i[0]+"   ",str(i[1])+"   "))
+        print(" --------------------- \n")
+
+    def shirt_stats(self):
+        temp = self.p.cursor()
+        temp.execute("SELECT kolor, rozmiar, count(*) As ile FROM druzyny JOIN zawodnicy ON druzyny.id = zawodnicy.druzyna WHERE rozmiar IS NOT NULL GROUP BY kolor, rozmiar ORDER BY kolor;")
+        koszulki = temp.fetchall()
+        print("|%-15s|%-9s|%7s|" % (" KOLOR"," ROZMIAR", " ILOŚĆ"))
+        print("-----------------------------------")
+        for i in koszulki:
+            print("|%-15s|%-9s|%7s|" % (" "+i[0],"   " + str(i[1]),str(i[2])+"   "))
+        print("")
     def close(self):
         self.p.close()
         print("================================================\n         DZIĘKUJEMY I ZAPRASZAMY PONOWNIE!\n================================================")

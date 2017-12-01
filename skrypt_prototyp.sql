@@ -48,6 +48,7 @@ insert into systemy(ilosc_druz, ilosc_gr, cwierc, pol, rewanze) values(21,7,true
 #Tworzenie tabeli z drużynami (awans = 1 to awans do ćwierćfinały, awans = 2 do półfinały, awans = 3 do finału)
 create table druzyny(id tinyint primary key auto_increment, nazwa tinytext, kolor varchar(20), grupa tinyint, mecze tinyint default 0, zwyc tinyint default 0, porazka tinyint default 0, punkty float default 0, male_pkt_plus smallint default 0, male_pkt_minus smallint default 0, roznica_pkt smallint default 0, awans tinyint default 0, miejsce tinyint);
 
+/*
 #Uzupełnienie tabeli drużyn
 insert into druzyny(nazwa, kolor) values ('Smoki','niebieski');
 insert into druzyny(nazwa, kolor) values ('Lajkoniki','czerwony');
@@ -61,15 +62,19 @@ insert into druzyny(nazwa, kolor) values ('Smogi','pomarańczowy');
 insert into druzyny(nazwa, kolor) values ('Kościuszki','srebrny');
 insert into druzyny(nazwa, kolor) values ('Papieże','złoty');
 insert into druzyny(nazwa, kolor) values ('Gołębie','seledynowy');
+*/
 
 #Lista systemów rozgrywek dla wybranej ilości drużyn
 #select * from systemy where ilosc_druz=(select count(*) from druzyny);
 
+/*
 #DO WYWALENIA:
 #Wybrany system(to będzie przechowywane w zmiennej):
 create table wybrany_system(id tinyint);
 insert into wybrany_system values (9);
+*/
 
+/*
 #Tworzenie tabeli rozmiarów
 create table rozmiary(rozmiar varchar(2) primary key);
 insert into rozmiary values('XS');
@@ -82,9 +87,10 @@ insert into rozmiary values('XL');
 create table jedzenie(opcja varchar(5) primary key);
 insert into jedzenie values('mięso');
 insert into jedzenie values('wege');
+*/
 
 #Tworzenie tabeli zawodników
-create table zawodnicy(id smallint primary key auto_increment, login varchar(50) unique, pass varchar(50), uprawnienia boolean default false, imie tinytext, nazwisko tinytext, plec char(1), poziom tinyint unsigned, pozycja varchar(7), menu varchar(5), rozmiar varchar(2), druzyna tinyint, foreign key(druzyna) references druzyny(id), foreign key(rozmiar) references rozmiary(rozmiar), foreign key(menu) references jedzenie(opcja));
+create table zawodnicy(id smallint primary key auto_increment, login varchar(50) unique, pass varchar(50), uprawnienia boolean default false, imie tinytext, nazwisko tinytext, plec char(1), poziom tinyint unsigned, pozycja varchar(7), menu varchar(5), rozmiar varchar(2), druzyna tinyint, foreign key(druzyna) references druzyny(id));
 insert into zawodnicy(login, pass, uprawnienia, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('admin','123', true, 'Jan','Kowalski','M',9,'handler','mięso','XL');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('bbaranowska','b10ska4','Beata','Baranowska','K',3,'handler','mięso','M');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('anowak','a22wak1','Anna','Nowak','K',3,'cutter','mięso','M');
@@ -217,7 +223,7 @@ insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, 
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('lwalczak','ł4zak1','Łukasz','Walczak','M',5,'handler','mięso','XS');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jwrobel','j39bel5','Jan','Wróbel','M',9,'cutter','mięso','M');
 
-
+/*
 #Przypisanie zawodników do drużyny (na razie losowo)
 update zawodnicy set druzyna = ceil((select count(*) from druzyny)*rand());
 
@@ -225,20 +231,23 @@ update zawodnicy set druzyna = ceil((select count(*) from druzyny)*rand());
 select id, plec, poziom, pozycja, druzyna from zawodnicy where plec = 'M' order by poziom desc limit 10;
 select id from druzyny;
 update zawodnicy set druzyna = 7 where id in (select id from (select id from zawodnicy where plec = 'M' order by poziom desc limit 10) as temp);
-
+select id, imie, nazwisko from zawodnicy where id in (4,15,16);
 
 #Ile będzie potrzebne obiadów
 select menu, count(*) As ile from zawodnicy where menu is not null group by menu;
 
 #Ile i jakich zamówić koszulek
+
 select kolor, rozmiar, count(*) As ile from druzyny join zawodnicy on druzyny.id = zawodnicy.druzyna group by kolor, rozmiar order by kolor;
 
 #Przydzielenie drużyn do grup (działa dla dowolnej ilości grup na podstawie ilości grup w wybranym systemie, przydziela drużyny po kolei bez losowania)
 update druzyny set grupa = ceil((id/(select ilosc_druz from systemy where id=(select * from wybrany_system)))*(select ilosc_gr from systemy where id=(select * from wybrany_system)));
+*/
 
 #Utworzenie tabeli meczów
 create table mecze(id tinyint primary key auto_increment, faza varchar(12), kto_id tinyint, z_kim_id tinyint, kto_pkt tinyint, z_kim_pkt tinyint, foreign key(kto_id) references druzyny(id), foreign key(z_kim_id) references druzyny(id));
 
+/*
 #Wypełnienie tabeli meczów o mecze grupowe (generuje rewanże w zależności od wartości parametru rewanże w systemach)
 insert into mecze(faza, kto_id, z_kim_id) select 'Faza grupowa', a.id, b.id from druzyny as a join druzyny as b where case when (select rewanze from systemy where id=(select * from wybrany_system)) then a.id!=b.id else a.id>b.id end and a.grupa=b.grupa;
 
@@ -334,28 +343,6 @@ select((select case when (select cwierc from systemy where id=(select * from wyb
 *
 (select ilosc_gr from wybrany_system natural join systemy)) as 'Ile drużyn awansuje dodatkowo');
 
-
-/* ZROBIONE W INNY SPOSÓB - DO WYWALENIA
-#Kto awansował? (zrobione ze zmienną, bo LIMIT nie przyjmuje wyrażeń)
-set @ile_wychodzi = (select(floor((select case when (select cwierc from systemy where id=(select * from wybrany_system))=1 then 8 when (select pol from systemy where id=(select * from wybrany_system))=1 then 4 else 2 end as Faza)/(select ilosc_gr from systemy where id=(select * from wybrany_system)))) As 'Awans bezpośredni z grupy');
-prepare wychodzace from "
-(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc limit ?)
-union all
-(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc limit ?)
-union all
-(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=3 order by zwyc desc, roznica_pkt desc limit ?)
-union all
-(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=4 order by zwyc desc, roznica_pkt desc limit ?)
-union all
-(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=5 order by zwyc desc, roznica_pkt desc limit ?)
-union all
-(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=6 order by zwyc desc, roznica_pkt desc limit ?)
-union all
-(select id, grupa, nazwa, zwyc, roznica_pkt from druzyny where grupa=7 order by zwyc desc, roznica_pkt desc limit ?)";
-
-execute wychodzace using @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi, @ile_wychodzi;
-*/
-
 #Wstawianie awansu drużynom z pierwszych miejsc
 update druzyny join (select max(punkty) as b from druzyny where grupa=1) as tab on punkty=b set awans = 1;
 update druzyny join (select max(punkty) as b from druzyny where grupa=2) as tab on punkty=b set awans = 1;
@@ -384,11 +371,12 @@ insert into mecze(faza, kto_id, z_kim_id) select 'Ćwierćfinał', (select id fr
 insert into mecze(faza, kto_id, z_kim_id) select 'Ćwierćfinał', (select id from druzyny where awans = 1 order by punkty desc limit 1 offset 2), (select id from druzyny where awans = 1 order by punkty asc limit 1 offset 2);
 insert into mecze(faza, kto_id, z_kim_id) select 'Ćwierćfinał', (select id from druzyny where awans = 1 order by punkty desc limit 1 offset 3), (select id from druzyny where awans = 1 order by punkty asc limit 1 offset 3);
 
-/*
+
 select * from logpass;
 select * from zawodnicy;
 select * from druzyny;
 select * from systemy;
 select * from mecze;
 select * from punktacja;
+select druzyna, poziom from zawodnicy order by druzyna, poziom desc;
 */
