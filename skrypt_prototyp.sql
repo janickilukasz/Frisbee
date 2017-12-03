@@ -252,10 +252,9 @@ create table mecze(id tinyint primary key auto_increment, faza varchar(12), kto_
 insert into mecze(faza, kto_id, z_kim_id) select 'Faza grupowa', a.id, b.id from druzyny as a join druzyny as b where case when (select rewanze from systemy where id=(select * from wybrany_system)) then a.id!=b.id else a.id>b.id end and a.grupa=b.grupa;
 
 #Prezentacja meczów
-select faza, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id;
-
+select faza, case when faza = "Faza grupowa" then d1.grupa else "-" end As Grupa, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id;
 #Prezentacja meczów dla konkretnego zawodnika
-select faza, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id join zawodnicy as z on (z.druzyna=kto_id or z.druzyna=z_kim_id) where z.id = 11;
+select faza, case when faza = "Faza grupowa" then d1.grupa else "-" end As Grupa, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id join zawodnicy as z on (z.druzyna=kto_id or z.druzyna=z_kim_id) where z.id = 11;
 
 #Utworzenie widoku "punktacja" w którym zbierana jest liczba zwycięstw i małe punkty TYLKO Z FAZY GRUPOWEJ
 create view punktacja as
@@ -308,7 +307,7 @@ update mecze set kto_pkt = 12, z_kim_pkt = 15 where id = 34;
 update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 35;
 update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 36;
 
-#Prezentacja wyników w jednej grupie
+#Prezentacja punktów w jednej grupie
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=3 order by zwyc desc, roznica_pkt desc;

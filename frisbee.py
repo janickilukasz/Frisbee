@@ -32,11 +32,7 @@ class MainScreen:
             elif self.upraw == 1:
                 self.admin_before()
         if self.start == 1:
-            if self.upraw == 0:
-                print("Panel zawodnika po starcie turnieju")        
-            elif self.upraw == 1:
-                print("Panel admina po starcie turnieju")
-            #metody po kolei
+            self.menu_after()
         self.close()
 
     def file_read(self,parametr):
@@ -136,12 +132,15 @@ class MainScreen:
         print("REJESTRACJA POWIODŁA SIĘ!\nTERAZ MOŻESZ SIĘ ZALOGOWAĆ!\n")
         self.log()
 
+    def is_player(self):
+        temp = self.p.cursor()
+        temp.execute("select((select imie from zawodnicy where login = '"+self.login+"') is not null);")
+        player_check = temp.fetchall()
+        self.player = int(player_check[0][0])        
+
     def player_before(self):
+        self.is_player()
         while True:
-            temp = self.p.cursor()
-            temp.execute("select((select imie from zawodnicy where login = '"+self.login+"') is not null);")
-            player_check = temp.fetchall()
-            self.player = int(player_check[0][0])
             if(self.player==0):
                 tekst1 = "CHCĘ ZAPISAĆ SIĘ NA TURNIEJ!"
                 temp_imie = ""
@@ -266,17 +265,31 @@ class MainScreen:
             else:
                 self.close()
 
-    def who_play(self):
+#Metoda poniżej zwraca info na temat wszystkich zawodników jeżeli nie poda się żadnych argumentów, a jeśli parametr team_only będzie równy 1 wtedy zwróci zawodników tylko z drużyny team_id
+    def who_play(self, team_only=0, team_id=0):
+        naglowek = "================== LISTA ZAPISANYCH ZAWODNIKÓW ================"
+        tekst = ""
+        if team_only==1:
+            temp = self.p.cursor()
+            temp.execute("SELECT nazwa, kolor FROM druzyny WHERE id = " + str(team_id) + ";")
+            krotka = temp.fetchall()
+            nazwa = krotka[0][0]
+            kolor = krotka[0][1]
+            naglowek2 = " "+ nazwa.upper() + " (kolor " + kolor.lower() + ") "
+            ile_suma = len(naglowek) - len(naglowek2)
+            strona = int(ile_suma/2)
+            naglowek = "=" * (strona+ile_suma%2) + naglowek2 + "=" * strona
+            tekst = " AND druzyna = " + str(team_id)
         temp = self.p.cursor()
-        temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja FROM zawodnicy WHERE imie IS NOT NULL;")
+        temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja FROM zawodnicy WHERE imie IS NOT NULL" + tekst + ";")
         krotka = temp.fetchall()
-        print("================= LISTA ZAPISANYCH ZAWODNIKÓW =================")
-        print("%-5s|%-15s|%-15s|%-10s|%-10s|%-10s" % ('LP.','IMIĘ','NAZWISKO','PŁEĆ','POZIOM','POZYCJA'))
+        print(naglowek)
+        print("%-5s|%-15s|%-15s|%-6s|%-8s|%-9s" % (' LP.','      IMIĘ','    NAZWISKO',' PŁEĆ',' POZIOM',' POZYCJA'))
         print("---------------------------------------------------------------")
         licznik=0
         for i in krotka:
             licznik = licznik + 1
-            print("%-5i|%-15s|%-15s|%-10s|%-10s|%-10s" % (licznik,i[0],i[1],i[2],i[3],i[4]))
+            print("%-5s|%-15s|%-15s|%-6s|%-8s|%-9s" % (" " + str(licznik)," "+i[0]," "+i[1],"  "+i[2],"   "+str(i[3])," "+i[4]))
         print("")
     
     def admin_before(self):
@@ -475,7 +488,9 @@ class MainScreen:
             ilosc = krotka[0][0]
             print("%-30s%-3s%-9s%-3s%-3s" % ("         |-- na poziomie "+str(i)+":", str(ilosc), "   ---", str(round((ilosc/suma_zaw)*100)), "%"))                 
         wynik = self.team_vol(suma_zaw,1)
-        print("\nProponowana ilość drużyn:     " + str(wynik)[1:-1] + "\n")
+        print("")
+        if self.start==0 :
+            print("Proponowana ilość drużyn:     " + str(wynik)[1:-1] + "\n")
     
     #funkcja zwraca krotkę z polecanymi ilościami drużyn w zależności od zadanych parametrów: players - ilość zawodników, spread - rozrzut wyników (max 2 w góre i w dół)
     def team_vol(self,players,spread):
@@ -525,7 +540,73 @@ class MainScreen:
             temp = self.p.cursor()
             temp.execute("UPDATE zawodnicy SET druzyna = "+str(i+1)+" WHERE id IN "+ str(krotka_temp) + ";")            
         self.p.commit()
-        
+
+    def menu_after(self):
+        self.is_player()
+        if self.upraw== 1:
+            tekst1 = "ADMINISTRATORA"
+            tekst2 = "------------------------------------------------\n5. ZOBACZYĆ ILE POTRZEBA KOSZULEK\n6. ZOBACZYĆ ILE POTRZEBA OBIADÓW\n7. WPISAĆ WYNIK MECZU\n8. DODAĆ UPRAWNIENIA ADMINISTRATORA\n9. ZOBACZYĆ SZCZEGÓŁOWĄ LISTĘ UŻYTKOWNIKÓW\n10. SPRAWDZIĆ STATYSTYKI ZAPISANYCH\n"
+            if self.player == 1:
+                tekst3 = "11. ZOBACZYĆ MOJE MECZE\n12"
+            else:
+                tekst3 = "11"
+        else:
+            tekst1 = "UŻYTKOWNIKA"
+            tekst2 = ""
+            if self.player == 1:
+                tekst3 = "5. ZOBACZYĆ MOJE MECZE\n6"
+            else:
+                tekst3 = "5"
+        while True:
+            print("================================================\n                PANEL " + tekst1 + "\n================================================")
+            tn = input("Co chcesz zrobić?\n1. ZOBACZYĆ WYNIKI MECZÓW\n2. ZOBACZYĆ GRUPY\n3. ZOBACZYĆ DRUŻYNY\n4. ZOBACZYĆ WSZYSTKICH ZAPISANYCH\n" + tekst2 + tekst3 + ". WŁAŚCIWIE TO NIC\n")
+            print("")
+            if tn=="1":
+                self.matches()
+            elif tn=="2":
+                print("grupy")
+            elif tn=="3":
+                self.who_play(1,3)
+                #TUTAJ!!! Zrobić wybieralność drużyn!
+            elif tn=="4":
+                self.who_play()
+            elif ((tn=="5" and self.upraw==0) or (tn=="11" and self.upraw == 1)) and self.player == 1:
+                self.matches(1)
+            elif self.upraw==1:
+                if tn=="5":
+                    self.shirt_stats()
+                elif tn=="6":
+                    self.menu_stats()
+                elif tn=="7":
+                    print("wpisanie wyniku")
+                elif tn=="8":
+                    self.admin_plus()
+                elif tn=="9":
+                    self.who_use()
+                elif tn=="10":
+                    self.stats()
+                else:
+                    self.close()
+            else:
+                self.close()
+
+    def matches(self, mine=0):
+        tekst = ""
+        if mine==1:
+            temp = self.p.cursor()
+            temp.execute("SELECT id FROM zawodnicy WHERE login='"+self.login+"';")
+            krotka = temp.fetchall()
+            ajdi = krotka[0][0]
+            tekst=" join zawodnicy as z on (z.druzyna=kto_id or z.druzyna=z_kim_id) where z.id = " + str(ajdi)
+        temp = self.p.cursor()
+        temp.execute("select faza, case when faza = 'Faza grupowa' then d1.grupa else '-' end As Grupa, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id"+tekst+";")
+        meczyki = temp.fetchall()
+        print("%-14s|%-7s|%-15s|%-15s|%-7s" % ("     FAZA"," GRUPA","   DRUŻYNA 1","   DRUŻYNA 2"," WYNIK"))
+        print("--------------------------------------------------------------")
+        for i in meczyki:
+            print("%-14s|%-7s|%-15s|%-15s|%-7s" % (" "+i[0],"   "+i[1]," "+i[2]," "+i[3]," "+i[4]))
+        print("\n")
+
     def menu_stats(self):
         temp = self.p.cursor()
         temp.execute("SELECT menu, count(*) As ile FROM zawodnicy WHERE menu IS NOT NULL GROUP by menu;")
