@@ -38,8 +38,6 @@ class MainScreen:
     def file_read(self,parametr):
         if(path.isfile("proj_src/parametry.txt")):
             temp = open("proj_src/parametry.txt","r")
-            #linijkę niżej można później wykasować
-            print("Odczytanie pliku powiodło się.\n")
             par_val = int(temp.readlines()[int(parametr)][:4])
             temp.close()
             return par_val
@@ -564,7 +562,20 @@ class MainScreen:
             if tn=="1":
                 self.matches()
             elif tn=="2":
-                self.groups(1)
+                temp = self.p.cursor()
+                temp.execute("SELECT DISTINCT grupa FROM druzyny;")
+                krotka = temp.fetchall() 
+                print("KTÓRĄ GRUPĘ CHCESZ OBEJRZEĆ?")
+                licznik = 0
+                for i in krotka:
+                    licznik+=1
+                    print(str(licznik) + ". GRUPA NR " + str(i[0]))
+                odp=input("")
+                print("")
+                if odp.isdigit() and (int(odp),) in krotka:
+                    self.groups(odp)
+                else:
+                    print("COŚ ŹLE WPISAŁEŚ!\n")
             elif tn=="3":
                 temp = self.p.cursor()
                 temp.execute("SELECT id, nazwa, kolor, grupa FROM druzyny;")
@@ -653,11 +664,54 @@ class MainScreen:
                 temp.execute("UPDATE mecze SET kto_pkt = "+kto_pkt+", z_kim_pkt = "+zkim_pkt+" where id = "+str(id_meczu)+";")
                 self.p.commit()
                 print("WPROWADZONO WYNIK MECZU!\n")
-                #TUTAJ TRZEBA ZAIMPLEMENTOWAĆ SPRAWDZAJKĘ CZY JUŻ KONIEC FAZY
+                if(len(meczyki)==1):
+                    self.promotion()
             else:
                 print("PODAŁEŚ NIEPOPRAWNY WYNIK. GRA TOCZY SIĘ DO 15 PUNKTÓW!\n")
         else:
-            print("COŚ ŹLE PODAŁEŚ\n!")
+            print("COŚ ŹLE PODAŁEŚ!\n")
+
+    def promotion(self):
+        #Ta metoda pozwala na awans po zakończeniu fazy grupowej.
+        #ile_awansuje - łączna ilość drużyn awansujących
+        #ile_grup - ile było grup
+        #ile_bezp - ile drużyn w jednej grupie na pewno awansuje dalej
+        #ile_dodat - ile drużyn poza tym awansuje (z tabeli zbiorczej)
+        #awans : 1 - do ćwierćfinałów, 2 - do półfinałów, 3 - do finału
+        id_sys = self.file_read(1)
+        temp = self.p.cursor()
+        temp.execute("SELECT cwierc, pol, ilosc_gr FROM systemy WHERE id = " + str(id_sys) + ";")
+        krotka = temp.fetchall()#w środku są inty
+        if(krotka[0][0]==1):
+            ile_awansuje = 8
+            awans = 1
+        elif(krotka[0][1]==1):
+            ile_awansuje = 4
+            awans = 2
+        else:
+            ile_awansuje = 2
+            awans = 3
+        ile_grup = krotka[0][2]
+        ile_bezp = int(ile_awansuje/ile_grup)
+        ile_dodat = ile_awansuje%ile_grup
+        #Wstawianie awansu drużynom z pierwszych miejsc
+        for i in range(1,ile_grup+1):
+            temp = self.p.cursor()
+            temp.execute("UPDATE druzyny join (SELECT max(punkty) as b from druzyny where grupa="+str(i)+") as tab on punkty=b set awans = "+str(awans)+";")
+            self.p.commit()
+        #Wstawianie awansu drużynom z drugich miejsc
+        if ile_bezp>1:
+            for i in range(1,ile_grup+1):
+                temp = self.p.cursor()
+                temp.execute("UPDATE druzyny join (SELECT max(punkty) as b from druzyny where grupa="+str(i)+" and punkty<(SELECT max(punkty) from druzyny where grupa="+str(i)+")) as tab on punkty=b SET awans = "+str(awans)+";")
+                self.p.commit()
+        #Wstawianie awansu drużynom dodatkowym
+        if ile_dodat>0:
+            for i in range(ile_dodat):
+                    temp = self.p.cursor()
+                    temp.execute("UPDATE druzyny join (SELECT max(punkty) as b from druzyny where awans = 0) as tab on b = punkty SET awans = "+str(awans)+";")
+                    self.p.commit()
+        #TUTAJ TERAZ!!! Trzeba zrobić wprowadzenie meczów po fazie grupowej i zastanowić się jak to rozegrać z półfinałami i finałami
 
     def menu_stats(self):
         temp = self.p.cursor()
