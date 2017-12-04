@@ -246,8 +246,10 @@ update druzyny set grupa = ceil((id/(select ilosc_druz from systemy where id=(se
 
 #Utworzenie tabeli meczów
 create table mecze(id tinyint primary key auto_increment, faza varchar(12), kto_id tinyint, z_kim_id tinyint, kto_pkt tinyint, z_kim_pkt tinyint, foreign key(kto_id) references druzyny(id), foreign key(z_kim_id) references druzyny(id));
-
 /*
+select mecze.id, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2 from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id where kto_pkt is null;
+
+
 #Wypełnienie tabeli meczów o mecze grupowe (generuje rewanże w zależności od wartości parametru rewanże w systemach)
 insert into mecze(faza, kto_id, z_kim_id) select 'Faza grupowa', a.id, b.id from druzyny as a join druzyny as b where case when (select rewanze from systemy where id=(select * from wybrany_system)) then a.id!=b.id else a.id>b.id end and a.grupa=b.grupa;
 
@@ -257,6 +259,7 @@ select faza, case when faza = "Faza grupowa" then d1.grupa else "-" end As Grupa
 select faza, case when faza = "Faza grupowa" then d1.grupa else "-" end As Grupa, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2, coalesce(concat(kto_pkt,':',z_kim_pkt),'- : -') as Wynik from mecze join druzyny as d1 on kto_id=d1.id join druzyny as d2 on z_kim_id=d2.id join zawodnicy as z on (z.druzyna=kto_id or z.druzyna=z_kim_id) where z.id = 11;
 
 #Utworzenie widoku "punktacja" w którym zbierana jest liczba zwycięstw i małe punkty TYLKO Z FAZY GRUPOWEJ
+*/
 create view punktacja as
 select kto_id as Drużyna, 1 as Zwycięstwa, kto_pkt As Punkty_plus, z_kim_pkt As Punkty_minus from mecze where kto_pkt>z_kim_pkt and faza='Faza grupowa'
 union all
@@ -269,6 +272,7 @@ select z_kim_id as Drużyna, 0 as Zwycięstwa, z_kim_pkt As Punkty_plus, kto_pkt
 #Stworzenie triggerów do aktualizacji liczby rozegranych meczów, zdobyczy punktowych itp. (do punktów dodano małe randomowe wpisy, żeby rozgraniczyć dwie drużyny o tych samych punktach - trochę to brzydkie rozwiązanie, ale na razie tak musi być)
 create trigger po_meczu after update on mecze for each row update druzyny set mecze = (select count(*) from punktacja where Drużyna = id), zwyc = coalesce((select sum(Zwycięstwa) from punktacja where Drużyna = id),0), porazka = (select count(*) from punktacja where Zwycięstwa=0 and Drużyna = id), male_pkt_plus = coalesce((select sum(Punkty_plus) from punktacja where Drużyna = id),0), male_pkt_minus = coalesce((select sum(Punkty_minus) from punktacja where Drużyna = id),0), roznica_pkt = male_pkt_plus - male_pkt_minus, punkty = zwyc+roznica_pkt/1000+rand()/1000;
 
+/*
 #Wprowadzenie kilku wyników meczów:
 update mecze set kto_pkt = 14, z_kim_pkt = 15 where id = 1;
 update mecze set kto_pkt = 15, z_kim_pkt = 13 where id = 2;
@@ -308,6 +312,7 @@ update mecze set kto_pkt = 6, z_kim_pkt = 15 where id = 35;
 update mecze set kto_pkt = 13, z_kim_pkt = 15 where id = 36;
 
 #Prezentacja punktów w jednej grupie
+*/
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=1 order by zwyc desc, roznica_pkt desc;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=2 order by zwyc desc, roznica_pkt desc;
 select nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa=3 order by zwyc desc, roznica_pkt desc;

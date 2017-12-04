@@ -281,7 +281,7 @@ class MainScreen:
             naglowek = "=" * (strona+ile_suma%2) + naglowek2 + "=" * strona
             tekst = " AND druzyna = " + str(team_id)
         temp = self.p.cursor()
-        temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja FROM zawodnicy WHERE imie IS NOT NULL" + tekst + ";")
+        temp.execute("SELECT imie, nazwisko, plec, poziom, pozycja FROM zawodnicy WHERE imie IS NOT NULL" + tekst + " ORDER BY nazwisko;")
         krotka = temp.fetchall()
         print(naglowek)
         print("%-5s|%-15s|%-15s|%-6s|%-8s|%-9s" % (' LP.','      IMIĘ','    NAZWISKO',' PŁEĆ',' POZIOM',' POZYCJA'))
@@ -564,10 +564,18 @@ class MainScreen:
             if tn=="1":
                 self.matches()
             elif tn=="2":
-                print("grupy")
+                self.groups(1)
             elif tn=="3":
-                self.who_play(1,3)
-                #TUTAJ!!! Zrobić wybieralność drużyn!
+                temp = self.p.cursor()
+                temp.execute("SELECT id, nazwa, kolor, grupa FROM druzyny;")
+                krotka = temp.fetchall()
+                print("SKŁAD KTÓREJ DRUŻYNY CHCESZ OBEJRZEĆ?")
+                for i in krotka:
+                    print("%3i. %s (kolor %s)" % (i[0],i[1].upper(),i[2].lower()))  
+                odp = input("")
+                print("")
+                if odp.isdigit() and int(odp)>0 and int(odp)<=len(krotka): 
+                    self.who_play(1,odp)
             elif tn=="4":
                 self.who_play()
             elif ((tn=="5" and self.upraw==0) or (tn=="11" and self.upraw == 1)) and self.player == 1:
@@ -578,7 +586,7 @@ class MainScreen:
                 elif tn=="6":
                     self.menu_stats()
                 elif tn=="7":
-                    print("wpisanie wyniku")
+                    self.matches_to_be()
                 elif tn=="8":
                     self.admin_plus()
                 elif tn=="9":
@@ -606,6 +614,50 @@ class MainScreen:
         for i in meczyki:
             print("%-14s|%-7s|%-15s|%-15s|%-7s" % (" "+i[0],"   "+i[1]," "+i[2]," "+i[3]," "+i[4]))
         print("\n")
+    
+    def groups(self, nr):
+        temp = self.p.cursor()
+        temp.execute("SELECT nazwa as Drużyna, mecze as Mecze, zwyc As Zwycięstwa, porazka As Porażki, male_pkt_plus As 'Punkty zdobyte', male_pkt_minus As 'Punkty stracone', roznica_pkt As 'Różnica punktowa', awans As Awans from druzyny where grupa="+str(nr)+" order by zwyc desc, roznica_pkt desc;")
+        krotka = temp.fetchall()
+        licznik = 0
+        print("=========================== GRUPA "+str(nr)+" ===========================")
+        print("%2s  %-14s%-7s%-7s%-7s | %-7s%-8s%3s" % ("","","Mecz.","Zwyc.","Prz.","Pkt+","Pkt-","Różn."))
+        for i in krotka:
+            licznik+=1
+            print("%2i. %-15s%-7i%-7i%-7i|  %-7i%-7i%3i" % (licznik,i[0].upper(),i[1],i[2],i[3],i[4],i[5],i[6]))
+        print("")
+    
+    def matches_to_be(self):
+        temp = self.p.cursor()
+        temp.execute("SELECT mecze.id, d1.nazwa As Drużyna1, d2.nazwa As Drużyna2 FROM mecze JOIN druzyny AS d1 ON kto_id=d1.id JOIN druzyny AS d2 ON z_kim_id=d2.id WHERE kto_pkt IS NULL ORDER BY mecze.id;")
+        meczyki = temp.fetchall()
+        licznik = 0
+        print("WYBIERZ NUMER MECZU, KTÓREGO WYNIK CHCESZ WPISAĆ:\n")
+        print("%3s. %-15s   %-15s" % ("NR","DRUŻYNA 1","DRUŻYNA 2"))
+        print("----------------------------------")
+        for i in meczyki:
+            licznik +=1
+            print("%3s. %-15s-  %-15s" % (licznik,i[1],i[2]))
+        odp = input("")
+        print("")
+        if odp.isdigit() and int(odp)>0 and int(odp)<=len(meczyki):
+            id_meczu = meczyki[int(odp)-1][0]
+            kto = meczyki[int(odp)-1][1]
+            zkim = meczyki[int(odp)-1][2]
+            kto_pkt = input("ILE PUNKTÓW ZDOBYŁA DRUŻYNA " + kto.upper() + "?\n")
+            print("")
+            zkim_pkt = input("ILE PUNKTÓW ZDOBYŁA DRUŻYNA " + zkim.upper() + "?\n")
+            print("")
+            if kto_pkt.isdigit() and zkim_pkt.isdigit() and ((int(kto_pkt)==15 and int(zkim_pkt)<15 and int(zkim_pkt)>=0) or (int(kto_pkt)<15 and int(zkim_pkt)==15 and int(kto_pkt)>=0)):
+                temp = self.p.cursor()
+                temp.execute("UPDATE mecze SET kto_pkt = "+kto_pkt+", z_kim_pkt = "+zkim_pkt+" where id = "+str(id_meczu)+";")
+                self.p.commit()
+                print("WPROWADZONO WYNIK MECZU!\n")
+                #TUTAJ TRZEBA ZAIMPLEMENTOWAĆ SPRAWDZAJKĘ CZY JUŻ KONIEC FAZY
+            else:
+                print("PODAŁEŚ NIEPOPRAWNY WYNIK. GRA TOCZY SIĘ DO 15 PUNKTÓW!\n")
+        else:
+            print("COŚ ŹLE PODAŁEŚ\n!")
 
     def menu_stats(self):
         temp = self.p.cursor()
