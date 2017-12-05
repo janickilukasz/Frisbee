@@ -137,8 +137,8 @@ class MainScreen:
         self.player = int(player_check[0][0])        
 
     def player_before(self):
-        self.is_player()
         while True:
+            self.is_player()
             if(self.player==0):
                 tekst1 = "CHCĘ ZAPISAĆ SIĘ NA TURNIEJ!"
                 temp_imie = ""
@@ -670,7 +670,6 @@ class MainScreen:
                 print("PODAŁEŚ NIEPOPRAWNY WYNIK. GRA TOCZY SIĘ DO 15 PUNKTÓW!\n")
         else:
             print("COŚ ŹLE PODAŁEŚ!\n")
-            self.promotion()
 
     def promotion(self):
         #Ta metoda pozwala na awans po zakończeniu fazy grupowej.
@@ -685,7 +684,7 @@ class MainScreen:
         spr = krotka[0][0]
         #promocje po fazie grupowej
         if spr==0:
-            print("Nadajemy awanse po fazie grupowej!")#to jest do wywalenia
+            print("NADANO AWANSE PO FAZIE GRUPOWEJ!\n")
             id_sys = self.file_read(1)
             temp = self.p.cursor()
             temp.execute("SELECT cwierc, pol, ilosc_gr FROM systemy WHERE id = " + str(id_sys) + ";")
@@ -728,12 +727,20 @@ class MainScreen:
                 temp.execute("INSERT INTO mecze(faza, kto_id, z_kim_id) select '"+tekst+"', (select id from druzyny where awans = "+str(awans)+" order by punkty desc limit 1 offset "+str(i)+"), (select id from druzyny where awans = "+ str(awans) + " order by punkty asc limit 1 offset "+str(i)+");")
                 self.p.commit()                
         #awanse poćwierćfinałowe
-        elif spr==1:
-            print("Czas na półfinały!")
         elif spr==2:
-            print("Czas na finał!")    
-        else:
-            print("Teraz nic nie dodajemy")#to też do wywalenia
+            print("CZAS NA PÓŁFINAŁY!\n")
+            temp = self.p.cursor()
+            temp.execute("INSERT INTO mecze(faza, kto_id, z_kim_id) select 'Półfinał', (select id from druzyny where awans = 2 order by punkty desc limit 1 offset 0), (select id from druzyny where awans = 2 order by punkty asc limit 1 offset 0);")
+            self.p.commit()
+            temp = self.p.cursor()
+            temp.execute("INSERT INTO mecze(faza, kto_id, z_kim_id) select 'Półfinał', (select id from druzyny where awans = 2 order by punkty desc limit 1 offset 1), (select id from druzyny where awans = 2 order by punkty asc limit 1 offset 1);")
+            self.p.commit()
+        #awanse popółfinałowe
+        elif spr==3:
+            print("CZAS NA FINAŁ!\n")
+            temp = self.p.cursor()
+            temp.execute("INSERT INTO mecze(faza, kto_id, z_kim_id) select 'Finał', (select id from druzyny where awans = 3 order by punkty desc limit 1), (select id from druzyny where awans = 3 order by punkty asc limit 1);")
+            self.p.commit()
 
     def menu_stats(self):
         temp = self.p.cursor()
@@ -760,8 +767,5 @@ class MainScreen:
         print("================================================\n         DZIĘKUJEMY I ZAPRASZAMY PONOWNIE!\n================================================")
         exit()
 
-
-
-        
 
 MainScreen()
