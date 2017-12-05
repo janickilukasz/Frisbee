@@ -1,6 +1,6 @@
 0001
-0009
-0012
+0003
+0006
 
 PARAMETR nr 0 "START" : czy turniej ju¿ wystartowa³? (0- nie, 1- tak)
 PARAMETR nr 1 "SYSTEM" : jaki system gry wybrano? (nr ID)

@@ -109,6 +109,7 @@ insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, 
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('kbaranowski','k22ski2','Krzysztof','Baranowski','M',8,'handler','mięso','M');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('rkwiatkowski','r42ski10','Ryszard','Kwiatkowski','M',2,'cutter','mięso','M');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('rwisniewski','r47ski2','Ryszard','Wiśniewski','M',10,'cutter','mięso','S');
+/*
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('kbaran','k43ran8','Karol','Baran','M',4,'handler','mięso','XL');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('mwojcik','m21cik6','Maciej','Wójcik','M',4,'handler','wege','M');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('wtomaszewski','w45ski3','Waldemar','Tomaszewski','M',9,'cutter','mięso','S');
@@ -169,6 +170,7 @@ insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, 
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jwozniak','j13iak3','Jan','Woźniak','M',9,'handler','mięso','L');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('lwalczak','ł4zak1','Łukasz','Walczak','M',5,'handler','mięso','XS');
 insert into zawodnicy(login, pass, imie, nazwisko, plec, poziom, pozycja, menu, rozmiar) values ('jwrobel','j39bel5','Jan','Wróbel','M',9,'cutter','mięso','M');
+*/
 
 #Utworzenie tabeli meczów
 create table mecze(id tinyint primary key auto_increment, faza varchar(12), kto_id tinyint, z_kim_id tinyint, kto_pkt tinyint, z_kim_pkt tinyint, foreign key(kto_id) references druzyny(id), foreign key(z_kim_id) references druzyny(id));
