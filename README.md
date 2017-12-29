@@ -1,7 +1,7 @@
 # Frisbee
 Application for organising frisbee HAT tournament made in Python and using MySQL database.
-
-Application offers:<br>
+<p>
+Application offers:
 <ul>
 	<li>creating your own profile as user and player</li>
 	<li>update your profile</li>
@@ -15,5 +15,5 @@ If you're an admin, you can:
 	<li>chose the game system, number of teams etc.</li>
 	<li>enter matches results from group stage to the final<li>
 </ul>
-
+</p>
 Ultimate Frisbee is a game played between two seven-player teams.
