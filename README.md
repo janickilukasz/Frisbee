@@ -13,7 +13,7 @@ If you're an admin, you can:
 	<li>give admin permission to chosen user</li>
 	<li>watch advanced stats</li>
 	<li>chose the game system, number of teams etc.</li>
-	<li>enter matches results from group stage to the final<li>
+	<li>enter matches results from group stage to the final</li>
 </ul>
 </p>
 Ultimate Frisbee is a game played between two seven-player teams.
